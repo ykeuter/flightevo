@@ -3,10 +3,11 @@ from flightros.msg import Cmd, State
 from sensor_msgs.msg import Image
 import math
 
+
 class Controller:
     def __init__(self):
         self._pub = None
-        
+
     def run(self):
         self._pub = rospy.Publisher('cmd', Cmd, queue_size=1)
         rospy.Subscriber("rgb", Image, self.img_callback)
@@ -44,7 +45,8 @@ class Controller:
             ).format(
                 msg.pose.position.x, msg.pose.position.y, msg.pose.position.z,
                 msg.twist.linear.x, msg.twist.linear.y, msg.twist.linear.z,
-                msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z,
+                msg.pose.orientation.w, msg.pose.orientation.x,
+                msg.pose.orientation.y, msg.pose.orientation.z,
                 msg.twist.angular.x, msg.twist.angular.y, msg.twist.angular.z,
             )
         )
