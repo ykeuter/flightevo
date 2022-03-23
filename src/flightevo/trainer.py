@@ -11,12 +11,13 @@ from . import utils
 
 class Trainer:
     MAX_T = 5.0
+    GOAL_HEIGHT = 5.
+
     POS_COEFF = -0.002
     ORI_COEFF = -0.002
     LIN_VEL_COEFF = -0.0002
     ANG_VEL_COEFF = -0.0002
     # ACT_COEFF = -0.0002
-    GOAL_STATE = np.array([.0, .0, 5., .0, .0, .0, .0, .0, .0, .0, .0, .0])
 
     def __init__(self):
         self._reset_sim = None
@@ -56,9 +57,16 @@ class Trainer:
             print("Service call failed: %s" % e)
 
     def _get_random_state(self):
+        rng = np.random.default_rng()
+        p = rng.uniform(-1, 1, 3)
+        p[2] += self.GOAL_HEIGHT
+        q = rng.uniform(-1, 1, 4)
+        q /= np.linalg.norm(q)
+        v = rng.uniform(-1, 1, 3)
+        a = rng.uniform(-1, 1, 3)
+
         return ResetSimRequest(
-            Pose(Point(0, 0, 7), Quaternion(1, 0, 0, 0)),
-            Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+            Pose(Point(*p), Quaternion(*q)), Twist(Vector3(*v), Vector3(*a))
         )
 
     def _get_weights(self, genome):
@@ -81,24 +89,23 @@ class Trainer:
     def _get_reward(self, s):
         r = 0
 
-        v = np.array([s.pose.position.x, s.pose.position.y, s.pose.position.z])
-        d = v - self.GOAL_STATE[:3]
+        d = np.array([
+            s.pose.position.x, s.pose.position.y,
+            s.pose.position.z - self.GOAL_HEIGHT
+        ])
         r += np.inner(d, d) * self.POS_COEFF
 
-        v = np.array(utils.quaternion_to_euler(
+        d = np.array(utils.quaternion_to_euler(
             s.pose.orientation.x, s.pose.orientation.y, s.pose.orientation.z,
             s.pose.orientation.w
         ))
-        d = v - self.GOAL_STATE[3:6]
         r += np.inner(d, d) * self.ORI_COEFF
 
-        v = np.array(
+        d = np.array(
             [s.twist.linear.x, s.potwistse.linear.y, s.twist.linear.z])
-        d = v - self.GOAL_STATE[6:9]
         r += np.inner(d, d) * self.LIN_VEL_COEFF
 
-        v = np.array([s.twist.angular.x, s.twist.angular.y, s.twist.angular.z])
-        d = v - self.GOAL_STATE[9:]
+        d = np.array([s.twist.angular.x, s.twist.angular.y, s.twist.angular.z])
         r += np.inner(d, d) * self.ANG_VEL_COEFF
 
         return r
