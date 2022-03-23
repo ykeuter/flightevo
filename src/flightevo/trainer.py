@@ -11,7 +11,7 @@ from .mlp import Mlp
 
 
 class Trainer:
-    EPOCH_LENGTH = 5.0
+    MAX_T = 5.0
     POS_COEFF = -0.002
     ORI_COEFF = -0.002
     LIN_VEL_COEFF = -0.0002
@@ -29,6 +29,7 @@ class Trainer:
         self._current_agent = None
         self._prev_state_t = 0
         self._prev_cmd_t = 0
+        self._prev_cmd = None
 
     def run(self):
         config_path = os.path.join(os.path.dirname(__file__), "nsssssssat.cfg")
@@ -45,6 +46,7 @@ class Trainer:
         self._reset_sim = rospy.ServiceProxy('reset_sim', ResetSim)
         self._reset_ctl = rospy.ServiceProxy('reset_ctl', ResetCtl)
         rospy.Subscriber("state", State, self.state_callback)
+        rospy.Subscriber("cmd", State, self.cmd_callback)
         rospy.spin()
 
     def _reset(self):
@@ -69,17 +71,27 @@ class Trainer:
 
     def state_callback(self, msg):
         t = msg.time.to_sec()
-        if t < self.EPOCH_LENGTH:
+        if t < self.MAX_T:
             self._is_resetting = False
         if self._is_resetting:
             return
         # update reward
         rospy.loginfo("\ntime: {:.2f}\n".format(msg.time.to_sec()))
-        if t > self.EPOCH_LENGTH:
+        if t > self.MAX_T:
             self._is_resetting = True
             self._reset()
 
-    def _get_reward(self, s):
+    def cmd_callback(self, msg):
+        if self._is_resetting:
+            return
+        t = min(msg.time.to_sec(), self.MAX_T)
+        if self._prev_cmd:
+            r = self._get_cmd_reward(msg)
+            self._current_reward += r * (t - self._prev_cmd_t)
+        self._prev_cmd = msg
+        self._prev_cmd_t = t
+
+    def _get_state_reward(self, s):
         r = 0
 
         v = np.array([s.pose.position.x, s.pose.position.y, s.pose.position.z])
