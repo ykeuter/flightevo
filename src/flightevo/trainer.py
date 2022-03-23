@@ -7,7 +7,6 @@ from flightros.srv import ResetSim, ResetSimRequest, ResetCtl, ResetCtlRequest
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3, Twist
 
 from . import utils
-from .mlp import Mlp
 
 
 class Trainer:
@@ -16,7 +15,7 @@ class Trainer:
     ORI_COEFF = -0.002
     LIN_VEL_COEFF = -0.0002
     ANG_VEL_COEFF = -0.0002
-    ACT_COEFF = -0.0002
+    # ACT_COEFF = -0.0002
     GOAL_STATE = np.array([.0, .0, 5., .0, .0, .0, .0, .0, .0, .0, .0, .0])
 
     def __init__(self):
@@ -28,8 +27,6 @@ class Trainer:
         self._current_reward = 0
         self._current_agent = None
         self._prev_state_t = 0
-        self._prev_cmd_t = 0
-        self._prev_cmd = None
 
     def run(self):
         config_path = os.path.join(os.path.dirname(__file__), "nsssssssat.cfg")
@@ -46,14 +43,12 @@ class Trainer:
         self._reset_sim = rospy.ServiceProxy('reset_sim', ResetSim)
         self._reset_ctl = rospy.ServiceProxy('reset_ctl', ResetCtl)
         rospy.Subscriber("state", State, self.state_callback)
-        rospy.Subscriber("cmd", State, self.cmd_callback)
         rospy.spin()
 
     def _reset(self):
         self._current_agent.fitness = self._current_reward
         self._current_agent = next(self._generator)
         self._current_reward = 0
-        # reset controller
         try:
             self._reset_ctl(self._get_weights(self._current_agent))
             self._reset_sim(self._get_random_state())
@@ -75,23 +70,15 @@ class Trainer:
             self._is_resetting = False
         if self._is_resetting:
             return
-        # update reward
+        r = self._get_reward(msg)
+        self._current_reward += r * (min(t, self.MAX_T) - self._prev_state_t)
+        self._prev_state_t = t
         rospy.loginfo("\ntime: {:.2f}\n".format(msg.time.to_sec()))
         if t > self.MAX_T:
             self._is_resetting = True
             self._reset()
 
-    def cmd_callback(self, msg):
-        if self._is_resetting:
-            return
-        t = min(msg.time.to_sec(), self.MAX_T)
-        if self._prev_cmd:
-            r = self._get_cmd_reward(msg)
-            self._current_reward += r * (t - self._prev_cmd_t)
-        self._prev_cmd = msg
-        self._prev_cmd_t = t
-
-    def _get_state_reward(self, s):
+    def _get_reward(self, s):
         r = 0
 
         v = np.array([s.pose.position.x, s.pose.position.y, s.pose.position.z])
