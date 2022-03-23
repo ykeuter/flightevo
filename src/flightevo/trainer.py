@@ -1,12 +1,12 @@
 import rospy
-import os
 import neat
 import numpy as np
 from flightros.msg import State
-from flightros.srv import ResetSim, ResetSimRequest, ResetCtl, ResetCtlRequest
+from flightros.srv import ResetSim, ResetSimRequest, ResetCtl
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3, Twist
 
 from . import utils
+from .mlp import Mlp
 
 
 class Trainer:
@@ -25,31 +25,31 @@ class Trainer:
         self._is_resetting = False
         self._population = None
         self._generator = None
-        self._current_reward = 0
         self._current_agent = None
         self._prev_state_t = 0
+        self._device = "cpu"
+        self._coords = self._get_coords()
 
-    def run(self):
-        config_path = os.path.join(os.path.dirname(__file__), "nsssssssat.cfg")
+    def run(self, cfg):
         config = neat.Config(
             neat.DefaultGenome,
             neat.DefaultReproduction,
             neat.DefaultSpeciesSet,
             neat.DefaultStagnation,
-            config_path,
+            cfg,
         )
         self._population = neat.Population(config)
         self._generator = iter(self._population)
         rospy.wait_for_service('reset_sim')
         self._reset_sim = rospy.ServiceProxy('reset_sim', ResetSim)
+        rospy.wait_for_service('reset_ctl')
         self._reset_ctl = rospy.ServiceProxy('reset_ctl', ResetCtl)
         rospy.Subscriber("state", State, self.state_callback)
         rospy.spin()
 
     def _reset(self):
-        self._current_agent.fitness = self._current_reward
         self._current_agent = next(self._generator)
-        self._current_reward = 0
+        self._current_agent.fitness = 0
         try:
             self._reset_ctl(self._get_weights(self._current_agent))
             self._reset_sim(self._get_random_state())
@@ -70,7 +70,9 @@ class Trainer:
         )
 
     def _get_weights(self, genome):
-        return ResetCtlRequest(data=[1, 2, 3])
+        net = Mlp.from_cppn(
+            genome, self._population.config, self._coords, self._device)
+        return net.to_msg()
 
     def state_callback(self, msg):
         t = msg.time.to_sec()
@@ -78,9 +80,11 @@ class Trainer:
             self._is_resetting = False
         if self._is_resetting:
             return
-        r = self._get_reward(msg)
-        self._current_reward += r * (min(t, self.MAX_T) - self._prev_state_t)
-        self._prev_state_t = t
+        if self._current_agent:
+            r = self._get_reward(msg)
+            self._current_agent.fitness += (
+                r * (min(t, self.MAX_T) - self._prev_state_t))
+            self._prev_state_t = t
         rospy.loginfo("\ntime: {:.2f}\n".format(msg.time.to_sec()))
         if t > self.MAX_T:
             self._is_resetting = True
@@ -109,3 +113,6 @@ class Trainer:
         r += np.inner(d, d) * self.ANG_VEL_COEFF
 
         return r
+
+    def _get_coords(self):
+        pass
