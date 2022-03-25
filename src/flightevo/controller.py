@@ -1,16 +1,23 @@
 import rospy
+import numpy as np
 from flightros.msg import Cmd, State
+from flightros.srv import ResetCtl
 from sensor_msgs.msg import Image
+
+from .mlp import Mlp
+from . import utils
 
 
 class Controller:
     def __init__(self):
         self._pub = None
+        self.net = None
 
     def run(self):
         self._pub = rospy.Publisher('cmd', Cmd, queue_size=1)
         rospy.Subscriber("rgb", Image, self.img_callback)
         rospy.Subscriber("state", State, self.state_callback)
+        rospy.Service("reset_ctl", ResetCtl, self.reset_callback)
         rospy.spin()
 
     def img_callback(self, msg):
@@ -49,7 +56,24 @@ class Controller:
                 msg.twist.angular.x, msg.twist.angular.y, msg.twist.angular.z,
             )
         )
-        self._pub.publish(Cmd(rospy.Time(0), [3, 3, 3, 3]))
+        if self.net:
+            euler_x, euler_y, euler_z = utils.quaternion_to_euler(
+                msg.pose.orientation.x, msg.pose.orientation.y,
+                msg.pose.orientation.z, msg.pose.orientation.w
+            )
+            x = np.array([
+                msg.pose.position.x, -msg.pose.position.x,
+                msg.pose.position.y, -msg.pose.position.y,
+                msg.pose.position.z,
+                euler_x, -euler_x, euler_y, -euler_y, euler_z,
+                msg.twist.linear.x, -msg.twist.linear.x,
+                msg.twist.linear.y, -msg.twist.linear.y,
+                msg.twist.linear.z,
+                msg.twist.angular.x, -msg.twist.angular.x,
+                msg.twist.angular.y, -msg.twist.angular.y,
+                msg.twist.angular.z,
+            ])
+            self._pub.publish(Cmd(msg.time, self.net.activate(x)))
 
     def reset_callback(self, msg):
-        pass
+        self.net = Mlp.from_msg(msg.mlp)

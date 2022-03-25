@@ -1,7 +1,8 @@
 import math
+from flightros.msg import Genome, Node, Connection
 
 
-def quaternion_to_euler(self, x, y, z, w):
+def quaternion_to_euler(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll = math.atan2(t0, t1)
@@ -16,3 +17,9 @@ def quaternion_to_euler(self, x, y, z, w):
     yaw = math.atan2(t3, t4)
 
     return roll, pitch, yaw
+
+def genome_to_msg(genome):
+    pass
+
+def msg_to_genome(msg):
+    pass
