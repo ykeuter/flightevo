@@ -1,3 +1,4 @@
+from re import L
 import rospy
 import neat
 import numpy as np
@@ -115,4 +116,30 @@ class Trainer:
         return r
 
     def _get_coords(self):
-        pass
+        # inputs
+        cross = [
+            (1, 0, 0), # x positive
+            (-1, 0, 0), # x negative
+            (0, 1, 0), # y positive
+            (0, -1, 0), # y negative
+            (0, 0, 0), # z
+        ]
+        positions = [(x - 2, y + 2, z) for x, y, z in cross]
+        euler = [(x - 2, y - 2, z) for x, y, z in cross]
+        linear = [(x + 2, y + 2, z) for x, y, z in cross]
+        angular = [(x + 2, y - 2, z) for x, y, z in cross]
+        inputs = positions + euler + linear + angular
+
+        #layers
+        layer1 = [
+            (x - 3.5, y - 3.5, z)
+            for x in range(8)
+            for y in range(8)
+            for z in [1, 2]
+        ]
+        layer2 = [(x, y, z + 2) for x, y, z in layer1]
+
+        # outputs (not sure about motor config)
+        outputs = [(2, 2, 5), (-2, 2, 5), (-2, -2, 5), (2, -2, 5), ]
+
+        return [inputs, layer1, layer2, outputs]
