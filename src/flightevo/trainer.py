@@ -118,11 +118,11 @@ class Trainer:
     def _get_coords(self):
         # inputs
         cross = [
-            (1, 0, 0), # x positive
-            (-1, 0, 0), # x negative
-            (0, 1, 0), # y positive
-            (0, -1, 0), # y negative
-            (0, 0, 0), # z
+            (1, 0, 0),  # x positive
+            (-1, 0, 0),  # x negative
+            (0, 1, 0),  # y positive
+            (0, -1, 0),  # y negative
+            (0, 0, 0),  # z
         ]
         positions = [(x - 2, y + 2, z) for x, y, z in cross]
         euler = [(x - 2, y - 2, z) for x, y, z in cross]
@@ -130,7 +130,7 @@ class Trainer:
         angular = [(x + 2, y - 2, z) for x, y, z in cross]
         inputs = positions + euler + linear + angular
 
-        #layers
+        # layers
         layer1 = [
             (x - 3.5, y - 3.5, z)
             for x in range(8)
