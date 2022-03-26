@@ -1,5 +1,8 @@
 import math
+from collections import namedtuple
 from flightros.msg import Genome, Node, Connection
+from pytorch_neat.activations import tanh_activation
+from pytorch_neat.aggregations import sum_aggregation
 
 
 def quaternion_to_euler(x, y, z, w):
@@ -18,8 +21,33 @@ def quaternion_to_euler(x, y, z, w):
 
     return roll, pitch, yaw
 
+
 def genome_to_msg(genome):
-    pass
+    msg = Genome(
+        nodes=[Node(key=k, bias=n.bias) for k, n in genome.nodes.items()],
+        connections=[
+            Connection(
+                from_node=i, to_node=o, weight=c.weight, enabled=c.enabled)
+            for (i, o), c in genome.connections.items()
+        ]
+    )
+    return msg
+
 
 def msg_to_genome(msg):
-    pass
+    Node = namedtuple(
+        "Node",
+        ["bias", "response", "activation", "aggregation"],
+        defaults=[1., tanh_activation, sum_aggregation],
+    )
+    nodes = {
+        n.key: Node(n.bias)
+        for n in msg.nodes
+    }
+    Connection = namedtuple("Connection", ["weight", "enabled"])
+    connections = {
+        (c.from_node, c.to_node): Connection(c.weight, c.enabled)
+        for c in msg.connections
+    }
+    Genome = namedtuple("Genome", ["nodes", "connections"])
+    return Genome(nodes, connections)
