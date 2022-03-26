@@ -41,12 +41,20 @@ class Trainer:
         )
         self._population = neat.Population(config)
         self._generator = iter(self._population)
-        rospy.wait_for_service('reset_sim')
-        self._reset_sim = rospy.ServiceProxy('reset_sim', ResetSim)
+        # rospy.wait_for_service('reset_sim')
+        # self._reset_sim = rospy.ServiceProxy('reset_sim', ResetSim)
         rospy.wait_for_service('reset_ctl')
         self._reset_ctl = rospy.ServiceProxy('reset_ctl', ResetCtl)
         rospy.Subscriber("state", State, self.state_callback)
-        rospy.spin()
+
+        self._current_agent = next(self._generator)
+        tic = rospy.get_time()
+        for _ in range(100):
+            self._reset_ctl(self._get_weights(self._current_agent))
+        toc = rospy.get_time()
+        rospy.loginfo("secs elapsed: {}".format(toc - tic))
+
+        # rospy.spin()
 
     def _reset(self):
         self._current_agent = next(self._generator)
