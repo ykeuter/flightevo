@@ -2,15 +2,20 @@ import neat
 import numpy as np
 import os
 import argparse
+import random
+import string
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
 
 from flightevo import utils
 from flightevo.mlp import Mlp
+from neat.csv_reporter import CsvReporter
+from neat.winner_reporter import WinnerReporter
+from pathlib import Path
 
 
 class VisionTrainer:
-    def __init__(self, env_cfg, neat_cfg):
+    def __init__(self, env_cfg, neat_cfg, log_dir):
         config = neat.Config(
             neat.DefaultGenome,
             neat.DefaultReproduction,
@@ -19,6 +24,12 @@ class VisionTrainer:
             neat_cfg,
         )
         self._population = neat.Population(config)
+        self._population.add_reporter(neat.Checkpointer(
+            1, None, str(Path(log_dir) / "checkpoint-")
+        ))
+        self._population.add_reporter(neat.StdOutReporter(True))
+        self._population.add_reporter(CsvReporter(Path(log_dir)))
+        self._population.add_reporter(WinnerReporter(Path(log_dir)))
         self._generator = iter(self._population)
         self._current_agent = None
         self._mlp = None
@@ -39,7 +50,7 @@ class VisionTrainer:
             [1, self._img_width * self._img_height], dtype=np.float32)
         obs = np.zeros([1, self._env.getObsDim()], dtype=np.float64)
         rew = np.zeros([1, self._env.getRewDim()], dtype=np.float64)
-        done = np.zeros(1, dtype=np.bool)
+        done = np.zeros(1, dtype=bool)
         info = np.zeros(
             [1, len(self._env.getExtraInfoNames())], dtype=np.float64)
 
@@ -98,6 +109,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
+    parser.add_argument("--log", default="logs/" + "".join(
+        random.choice(string.ascii_lowercase + string.digits)
+        for _ in range(8)
+    ))
     args = parser.parse_args()
-    t = VisionTrainer(args.env, args.neat)
+    Path(args.log).mkdir()
+    t = VisionTrainer(args.env, args.neat, args.log)
     t.run()
