@@ -1,6 +1,6 @@
 import math
 from collections import namedtuple
-from flightros.msg import Genome, Node, Connection
+# from flightros.msg import Genome, Node, Connection
 from pytorch_neat.activations import tanh_activation
 from pytorch_neat.aggregations import sum_aggregation
 

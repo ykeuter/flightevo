@@ -1,5 +1,5 @@
 import torch
-import flightros
+# import flightros
 from pytorch_neat.cppn import create_cppn
 from pytorch_neat.activations import tanh_activation
 from std_msgs.msg import (
@@ -19,7 +19,7 @@ class Mlp:
                 inputs, dtype=torch.float32, device=self.device).unsqueeze(1)
             for w, b in zip(self.weights, self.biases):
                 x = self.activation(w.mm(x) + b)
-        return x.squeeze(1)
+        return x.squeeze(1).cpu().numpy()
 
     def to_msg(self):
         return flightros.msg.Mlp(
@@ -94,7 +94,7 @@ class Mlp:
         biases = []
         with torch.no_grad():
             bias_coords = torch.zeros(
-                (1, 2), dtype=torch.float32, device=device)
+                (1, 3), dtype=torch.float32, device=device)
             for in_coords, out_coords in zip(coords[:-1], coords[1:]):
                 (x_out, y_out, z_out), (x_in, y_in, z_in) = \
                     Mlp._get_coord_inputs(in_coords, out_coords)

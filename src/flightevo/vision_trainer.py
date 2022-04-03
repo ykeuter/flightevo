@@ -5,8 +5,8 @@ import argparse
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
 
-from . import utils
-from .mlp import Mlp
+from flightevo import utils
+from flightevo.mlp import Mlp
 
 
 class VisionTrainer:
@@ -29,18 +29,11 @@ class VisionTrainer:
         self._img_width = self._env.getImgWidth()
         self._img_height = self._env.getImgHeight()
 
-        self._device = "cpu"
+        self._device = "cuda"
         self._coords = self._get_coords()
         self._frame_id = 0
 
     def run(self):
-        os.system(os.environ["FLIGHTMARE_PATH"] +
-                  "/flightrender/RPG_Flightmare.x86_64 &")
-        self._reset()
-        self._env.reset()
-        self._env.connectUnity()
-
-        actions = np.zeros([1, 4], dtype=np.float64)
         state = np.zeros([1, 25], dtype=np.float64)
         img = np.zeros(
             [1, self._img_width * self._img_height], dtype=np.float32)
@@ -49,20 +42,27 @@ class VisionTrainer:
         done = np.zeros(1, dtype=np.bool)
         info = np.zeros(
             [1, len(self._env.getExtraInfoNames())], dtype=np.float64)
-        try:
-            while True:
-                self._env.step(actions, obs, rew, done, info)
-                if done[0]:
-                    self._reset()
-                self._env.updateUnity(self._frame_id)
-                self._env.getDepthImage(img)
-                self._env.getQuadState(state)
-                self._current_agent.fitness = max(
-                    self._current_agent.fitness, state[0, 1])
-                actions = self._mlp.activate(img.reshape(-1)) \
-                    .cpu().numpy().reshape(1, 4)
-        except Exception:
-            self._env.disconnectUnity()
+
+        os.system(os.environ["FLIGHTMARE_PATH"] +
+                  "/flightrender/RPG_Flightmare.x86_64 &")
+        self._env.connectUnity()
+        # try:
+        self._reset()
+        self._env.reset(obs)
+        while True:
+            self._env.updateUnity(self._frame_id)
+            self._env.getDepthImage(img)
+            self._env.getQuadState(state)
+            self._current_agent.fitness = max(
+                self._current_agent.fitness, state[0, 1])
+            actions = self._mlp.activate(img.reshape(-1)) \
+                .astype(np.float64).reshape(1, 4)
+            self._env.step(actions, obs, rew, done, info)
+            self._frame_id += 1
+            if done[0]:
+                self._reset()
+        # except Exception:
+        #     self._env.disconnectUnity()
 
     def _reset(self):
         self._current_agent = next(self._generator)
@@ -75,7 +75,7 @@ class VisionTrainer:
         grid = self._get_grid(self._img_width, self._img_height, 10, 10)
         inputs = [(x, y, 0) for x, y in grid]
 
-        grid = self._get_grid(64, 64, 10, 10)
+        grid = self._get_grid(8, 8, 10, 10)
         layer = [(x, y, 1) for x, y in grid]
 
         # outputs (not sure about motor config)
@@ -96,6 +96,8 @@ class VisionTrainer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config")
-    args = parser().parse_args()
-    t = VisionTrainer(args.cfg)
+    parser.add_argument("--neat", default="cfg/neat.cfg")
+    parser.add_argument("--env", default="cfg/env.yaml")
+    args = parser.parse_args()
+    t = VisionTrainer(args.env, args.neat)
+    t.run()
