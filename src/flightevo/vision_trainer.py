@@ -90,19 +90,19 @@ class VisionTrainer:
         grid = self._get_grid(8, 8, 10, 10)
         layer = [(x, y, 1) for x, y in grid]
 
-        # outputs (not sure about motor config)
-        outputs = [(5, 5, 2), (-5, 5, 2), (-5, -5, 2), (5, -5, 2), ]
+        # outputs (thrusts: fr, bl, br, fl)
+        outputs = [(5, 5, 2), (-5, -5, 2), (5, -5, 2), (-5, 5, 2), ]
 
         return [inputs, layer, outputs]
 
     def _get_grid(self, ncols, nrows, width, height):
         return (
             (
-                c * width / (ncols - 1) - width / 2,
-                r * height / (nrows - 1) - height / 2
+                c * width / ncols - width / 2,
+                -r * height / nrows + height / 2
             )
-            for c in range(ncols)
             for r in range(nrows)
+            for c in range(ncols)
         )
 
 
