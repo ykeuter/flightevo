@@ -123,10 +123,20 @@ class VisionTrainer:
         inputs = img + pos + vel + rot + omega
 
         z = 4
+        grid = self._get_grid(16, 16, r * 2, r * 2)
+        layer1 = [(x, y, z) for x, y in grid]
+        z = 5
+        layer2 = [(x, y, z) for x, y in grid]
+        hidden1 = layer1 + layer2
+
+        z = 6
         grid = self._get_grid(8, 8, r * 2, r * 2)
         layer1 = [(x, y, z) for x, y in grid]
+        z = 7
+        layer2 = [(x, y, z) for x, y in grid]
+        hidden2 = layer1 + layer2
 
-        z = 5
+        z = 8
         outputs = [
             (r, r, z),  # fr
             (-r, -r, z),  # bl
@@ -134,17 +144,17 @@ class VisionTrainer:
             (-r, r, z),  # fl
         ]
 
-        return [inputs, layer1, outputs]
+        return [inputs, hidden1, hidden2, outputs]
 
     def _get_grid(self, ncols, nrows, width, height):
-        return (
+        return [
             (
                 c * width / ncols - width / 2,
                 -r * height / nrows + height / 2
             )
             for r in range(nrows)
             for c in range(ncols)
-        )
+        ]
 
 
 if __name__ == "__main__":
