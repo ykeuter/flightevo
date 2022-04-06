@@ -84,16 +84,57 @@ class VisionTrainer:
         self._frame_id = 0
 
     def _get_coords(self):
-        grid = self._get_grid(self._img_width, self._img_height, 10, 10)
-        inputs = [(x, y, 0) for x, y in grid]
+        r = 5
 
-        grid = self._get_grid(8, 8, 10, 10)
-        layer = [(x, y, 1) for x, y in grid]
+        z = 0
+        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
+        img = [(x, y, z) for x, y in grid]
+        pos = [
+            (-r, 0, z),  # y
+            (r, 0, z),  # -y
+            (0, 0, z),  # z
+        ]
+        z = 1
+        vel = [
+            (0, r, z),  # x
+            (0, -r, z),  # -x
+            (-r, 0, z),  # y
+            (r, 0, z),  # -y
+            (0, 0, z),  # z
+        ]
+        z = 2
+        rot = [
+            (-r, r, z),  # x
+            (r, r, z),  # -x
+            (0, r, z),  # y
+            (0, -r, z),  # -y
+            (-r, -r, z),  # z
+            (r, -r, z),  # -z
+        ]
+        z = 3
+        omega = [
+            (-r, r, z),  # x
+            (r, r, z),  # -x
+            (0, r, z),  # y
+            (0, -r, z),  # -y
+            (-r, -r, z),  # z
+            (r, -r, z),  # -z
+        ]
+        inputs = img + pos + vel + rot + omega
 
-        # outputs (thrusts: fr, bl, br, fl)
-        outputs = [(5, 5, 2), (-5, -5, 2), (5, -5, 2), (-5, 5, 2), ]
+        z = 4
+        grid = self._get_grid(8, 8, r * 2, r * 2)
+        layer1 = [(x, y, z) for x, y in grid]
 
-        return [inputs, layer, outputs]
+        z = 5
+        outputs = [
+            (r, r, z),  # fr
+            (-r, -r, z),  # bl
+            (r, -r, z),  # br
+            (-r, r, z),  # fl
+        ]
+
+        return [inputs, layer1, outputs]
 
     def _get_grid(self, ncols, nrows, width, height):
         return (
