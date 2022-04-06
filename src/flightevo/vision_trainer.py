@@ -57,23 +57,24 @@ class VisionTrainer:
         os.system(os.environ["FLIGHTMARE_PATH"] +
                   "/flightrender/RPG_Flightmare.x86_64 &")
         self._env.connectUnity()
-        # try:
-        self._reset()
-        self._env.reset(obs)
-        while True:
-            self._env.updateUnity(self._frame_id)
-            self._env.getDepthImage(img)
-            self._env.getQuadState(state)
-            self._current_agent.fitness = max(
-                self._current_agent.fitness, state[0, 1])
-            actions = self._mlp.activate(img.reshape(-1)) \
-                .astype(np.float64).reshape(1, 4)
-            self._env.step(actions, obs, rew, done, info)
-            self._frame_id += 1
-            if done[0]:
-                self._reset()
-        # except Exception:
-        #     self._env.disconnectUnity()
+        try:
+            self._reset()
+            self._env.reset(obs)
+            while True:
+                self._env.updateUnity(self._frame_id)
+                self._env.getDepthImage(img)
+                self._env.getQuadState(state)
+                self._current_agent.fitness = max(
+                    self._current_agent.fitness, state[0, 1])
+                actions = self._mlp.activate(img.reshape(-1)) \
+                    .astype(np.float64).reshape(1, 4)
+                self._env.step(actions, obs, rew, done, info)
+                self._frame_id += 1
+                if done[0]:
+                    self._reset()
+        except Exception as e:
+            print(e)
+            self._env.disconnectUnity()
 
     def _reset(self):
         self._current_agent = next(self._generator)
