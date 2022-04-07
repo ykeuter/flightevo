@@ -45,7 +45,7 @@ class VisionTrainer:
         self._frame_id = 0
 
     def run(self):
-        state = np.zeros([1, 25], dtype=np.float64)
+        # state = np.zeros([1, 25], dtype=np.float64)
         img = np.zeros(
             [1, self._img_width * self._img_height], dtype=np.float32)
         obs = np.zeros([1, self._env.getObsDim()], dtype=np.float64)
@@ -63,11 +63,12 @@ class VisionTrainer:
             while True:
                 self._env.updateUnity(self._frame_id)
                 self._env.getDepthImage(img)
-                self._env.getQuadState(state)
+                # self._env.getQuadState(state)
                 self._current_agent.fitness = max(
-                    self._current_agent.fitness, state[0, 1])
-                actions = self._mlp.activate(img.reshape(-1)) \
-                    .astype(np.float64).reshape(1, 4)
+                    self._current_agent.fitness, obs[0, 0])
+                actions = self._mlp.activate(
+                    np.concatenate([img.reshape(-1), self._transform_obs(obs)])
+                ).astype(np.float64).reshape(1, 4)
                 self._env.step(actions, obs, rew, done, info)
                 self._frame_id += 1
                 if done[0]:
@@ -82,6 +83,36 @@ class VisionTrainer:
         self._mlp = Mlp.from_cppn(self._current_agent, self._population.config,
                                   self._coords, self._device)
         self._frame_id = 0
+
+    def _transform_obs(self, obs):
+        # obs: pos, eulerzyx, vel, omega
+        v = obs.reshape(-1)
+        return np.array([
+            # position
+            v[1],  # y
+            -v[1],  # -y
+            v[2],  # z
+            # velocity
+            v[6],  # x
+            -v[6],  # -x
+            v[7],  # y
+            -v[7],  # -y
+            v[8],  # z
+            # euler angles
+            v[5],  # x
+            -v[5],  # -x
+            v[4],  # y
+            -v[4],  # -y
+            v[3],  # z
+            -v[3],  # -z
+            # angular velocity
+            v[9],  # x
+            -v[9],  # -x
+            v[10],  # y
+            -v[10],  # -y
+            v[11],  # z
+            -v[11],  # -z
+        ], dtype=np.float32)
 
     def _get_coords(self):
         r = 5
