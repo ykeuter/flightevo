@@ -4,10 +4,10 @@ import os
 import argparse
 import random
 import string
+# import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
 
-from flightevo import utils
 from flightevo.mlp import Mlp
 from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
@@ -80,8 +80,10 @@ class VisionTrainer:
     def _reset(self):
         self._current_agent = next(self._generator)
         self._current_agent.fitness = 0
+        del self._mlp
         self._mlp = Mlp.from_cppn(self._current_agent, self._population.config,
                                   self._coords, self._device)
+        # print(torch.cuda.memory_allocated())
         self._frame_id = 0
 
     def _transform_obs(self, obs):
@@ -154,7 +156,7 @@ class VisionTrainer:
         inputs = img + pos + vel + rot + omega
 
         z = 4
-        grid = self._get_grid(16, 16, r * 2, r * 2)
+        grid = self._get_grid(12, 12, r * 2, r * 2)
         layer1 = [(x, y, z) for x, y in grid]
         z = 5
         layer2 = [(x, y, z) for x, y in grid]
