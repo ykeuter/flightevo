@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 class VisionTrainer:
-    def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle):
+    def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
         self._neat_config = neat.Config(
             neat.DefaultGenome,
             neat.DefaultReproduction,
@@ -30,7 +30,11 @@ class VisionTrainer:
             self._generator = self._yield(w)
         else:
             Path(log_dir).mkdir()
-            pop = neat.Population(self._neat_config)
+            if checkpoint:
+                pop = neat.Checkpointer.restore_checkpoint(checkpoint)
+                self._neat_config = pop.config
+            else:
+                pop = neat.Population(self._neat_config)
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
             ))
@@ -204,6 +208,7 @@ class VisionTrainer:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--winner", default="")
+    parser.add_argument("--checkpoint", default="")
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
     parser.add_argument("--log", default="logs/" + "".join(
@@ -211,5 +216,6 @@ if __name__ == "__main__":
         for _ in range(8)
     ))
     args = parser.parse_args()
-    t = VisionTrainer(args.env, args.neat, args.log, args.winner)
+    t = VisionTrainer(args.env, args.neat, args.log,
+                      args.winner, args.checkpoint)
     t.run()
