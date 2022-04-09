@@ -30,7 +30,7 @@ class VisionTrainer:
             self._generator = self._yield(w)
         else:
             Path(log_dir).mkdir()
-            pop = neat.Population(config)
+            pop = neat.Population(self._neat_config)
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
             ))
