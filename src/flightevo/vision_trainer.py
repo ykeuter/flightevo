@@ -29,6 +29,7 @@ class VisionTrainer:
                 w = pickle.load(f)
             self._generator = self._yield(w)
         else:
+            Path(log_dir).mkdir()
             pop = neat.Population(config)
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
@@ -210,6 +211,5 @@ if __name__ == "__main__":
         for _ in range(8)
     ))
     args = parser.parse_args()
-    Path(args.log).mkdir()
     t = VisionTrainer(args.env, args.neat, args.log, args.winner)
     t.run()
