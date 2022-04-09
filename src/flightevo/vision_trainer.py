@@ -4,6 +4,7 @@ import os
 import argparse
 import random
 import string
+import pickle
 # import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
@@ -15,22 +16,27 @@ from pathlib import Path
 
 
 class VisionTrainer:
-    def __init__(self, env_cfg, neat_cfg, log_dir):
-        config = neat.Config(
+    def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle):
+        self._neat_config = neat.Config(
             neat.DefaultGenome,
             neat.DefaultReproduction,
             neat.DefaultSpeciesSet,
             neat.DefaultStagnation,
             neat_cfg,
         )
-        self._population = neat.Population(config)
-        self._population.add_reporter(neat.Checkpointer(
-            1, None, str(Path(log_dir) / "checkpoint-")
-        ))
-        self._population.add_reporter(neat.StdOutReporter(True))
-        self._population.add_reporter(CsvReporter(Path(log_dir)))
-        self._population.add_reporter(WinnerReporter(Path(log_dir)))
-        self._generator = iter(self._population)
+        if winner_pickle:
+            with open(winner_pickle, "rb") as f:
+                w = pickle.load(f)
+            self._generator = self._yield(w)
+        else:
+            pop = neat.Population(config)
+            pop.add_reporter(neat.Checkpointer(
+                1, None, str(Path(log_dir) / "checkpoint-")
+            ))
+            pop.add_reporter(neat.StdOutReporter(True))
+            pop.add_reporter(CsvReporter(Path(log_dir)))
+            pop.add_reporter(WinnerReporter(Path(log_dir)))
+            self._generator = iter(pop)
         self._current_agent = None
         self._mlp = None
 
@@ -43,6 +49,10 @@ class VisionTrainer:
         self._device = "cuda"
         self._coords = self._get_coords()
         self._frame_id = 0
+
+    def _yield(self, x):
+        while True:
+            yield x
 
     def run(self):
         # state = np.zeros([1, 25], dtype=np.float64)
@@ -81,7 +91,7 @@ class VisionTrainer:
         self._current_agent = next(self._generator)
         self._current_agent.fitness = 0
         del self._mlp
-        self._mlp = Mlp.from_cppn(self._current_agent, self._population.config,
+        self._mlp = Mlp.from_cppn(self._current_agent, self._neat_config,
                                   self._coords, self._device)
         # print(torch.cuda.memory_allocated())
         self._frame_id = 0
@@ -192,6 +202,7 @@ class VisionTrainer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--winner", default="")
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
     parser.add_argument("--log", default="logs/" + "".join(
@@ -200,5 +211,5 @@ if __name__ == "__main__":
     ))
     args = parser.parse_args()
     Path(args.log).mkdir()
-    t = VisionTrainer(args.env, args.neat, args.log)
+    t = VisionTrainer(args.env, args.neat, args.log, args.winner)
     t.run()
