@@ -1,4 +1,5 @@
 import torch
+import math
 # import flightros
 from pytorch_neat.cppn import create_cppn
 from pytorch_neat.activations import tanh_activation
@@ -109,3 +110,26 @@ class Mlp:
                     x_out=x_out, y_out=y_out, z_out=z_out,
                 ))
         return weights, biases
+
+    @staticmethod
+    def _apply_node(node, x_in, y_in, z_in, x_out, y_out, z_out):
+        s = x_in.shape[0]
+        bs = s
+        while True:
+            try:
+                return torch.cat(
+                    node(
+                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:(i + bs), :],
+                    )
+                    for i in range(0, s, bs)
+                )
+            except Exception as e:
+                if bs <= 1:
+                    raise e
+                else:
+                    bs = math.ceil(bs / 2)
