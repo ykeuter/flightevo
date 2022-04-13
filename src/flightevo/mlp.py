@@ -73,6 +73,7 @@ class Mlp:
             for c in coords
         ]
         w, b = Mlp._apply_cppn(nodes[0], nodes[1], coords, device)
+        torch.cuda.empty_cache()
         return Mlp(w, b, device)
 
     @staticmethod
@@ -99,37 +100,35 @@ class Mlp:
             for in_coords, out_coords in zip(coords[:-1], coords[1:]):
                 (x_out, y_out, z_out), (x_in, y_in, z_in) = \
                     Mlp._get_coord_inputs(in_coords, out_coords)
-                weights.append(weight_node(
-                    x_in=x_in, y_in=y_in, z_in=z_in,
-                    x_out=x_out, y_out=y_out, z_out=z_out,
-                ))
+                weights.append(Mlp._apply_node(
+                    weight_node, x_in, y_in, z_in, x_out, y_out, z_out,))
                 (x_out, y_out, z_out), (x_in, y_in, z_in) = \
                     Mlp._get_coord_inputs(bias_coords, out_coords)
-                biases.append(bias_node(
-                    x_in=x_in, y_in=y_in, z_in=z_in,
-                    x_out=x_out, y_out=y_out, z_out=z_out,
-                ))
+                biases.append(Mlp._apply_node(
+                    bias_node, x_in, y_in, z_in, x_out, y_out, z_out,))
         return weights, biases
 
     @staticmethod
     def _apply_node(node, x_in, y_in, z_in, x_out, y_out, z_out):
-        s = x_in.shape[0]
+        s = x_in.size()[0]
         bs = s
+        # print(bs)
         while True:
             try:
-                return torch.cat(
+                return torch.cat([
                     node(
-                        x_in=x_in[i:(i + bs), :],
-                        x_in=x_in[i:(i + bs), :],
-                        x_in=x_in[i:(i + bs), :],
-                        x_in=x_in[i:(i + bs), :],
-                        x_in=x_in[i:(i + bs), :],
-                        x_in=x_in[i:(i + bs), :],
+                        x_in=x_in[i:i + bs, :],
+                        y_in=y_in[i:i + bs, :],
+                        z_in=z_in[i:i + bs, :],
+                        x_out=x_out[i:i + bs, :],
+                        y_out=y_out[i:i + bs, :],
+                        z_out=z_out[i:i + bs, :],
                     )
                     for i in range(0, s, bs)
-                )
+                ])
             except Exception as e:
                 if bs <= 1:
                     raise e
                 else:
                     bs = math.ceil(bs / 2)
+                    # print(bs)
