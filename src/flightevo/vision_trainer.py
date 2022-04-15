@@ -75,6 +75,7 @@ class VisionTrainer:
         try:
             self._reset()
             self._env.reset(obs)
+            # print(obs)
             while True:
                 self._env.updateUnity(self._frame_id)
                 self._env.getDepthImage(img)
@@ -82,9 +83,12 @@ class VisionTrainer:
                 self._current_agent.fitness = max(
                     self._current_agent.fitness, obs[0, 0])
                 actions = self._mlp.activate(
-                    np.concatenate([img.reshape(-1), self._transform_obs(obs)])
+                    np.concatenate([self._transform_obs(obs), img.reshape(-1)])
                 ).astype(np.float64).reshape(1, 4)
+                # print(actions)
                 self._env.step(actions, obs, rew, done, info)
+                # print(obs)
+                # print(done)
                 self._frame_id += 1
                 if done[0]:
                     self._reset()
@@ -109,82 +113,126 @@ class VisionTrainer:
             v[1],  # y
             -v[1],  # -y
             v[2],  # z
+            v[2],  # -z
             # velocity
+            v[3],  # x
+            -v[3],  # -x
+            v[4],  # y
+            -v[4],  # -y
+            v[5],  # z
+            # rot_x
             v[6],  # x
             -v[6],  # -x
             v[7],  # y
             -v[7],  # -y
             v[8],  # z
-            # euler angles
-            v[5],  # x
-            -v[5],  # -x
-            v[4],  # y
-            -v[4],  # -y
-            v[3],  # z
-            -v[3],  # -z
-            # angular velocity
+            # rot_y
             v[9],  # x
             -v[9],  # -x
             v[10],  # y
             -v[10],  # -y
             v[11],  # z
-            -v[11],  # -z
+            # rot_z
+            v[12],  # x
+            v[13],  # y
+            -v[13],  # -y
+            v[14],  # z
+            -v[14],  # -z
+            # angular velocity
+            v[15],  # x
+            -v[15],  # -x
+            v[16],  # y
+            -v[16],  # -y
+            v[17],  # z
+            v[17],  # z
+            -v[17],  # -z
+            -v[17],  # -z
         ], dtype=np.float32)
 
     def _get_coords(self):
         r = 5
 
+        inputs = []
         z = 0
-        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
-        img = [(x, y, z) for x, y in grid]
         pos = [
-            (-r, 0, z),  # y
-            (r, 0, z),  # -y
-            (0, 0, z),  # z
+            (r, 0, z),  # y
+            (-r, 0, z),  # -y
+            (0, r, z),  # z
+            (0, -r, z),  # -z
         ]
-        z = 1
+        inputs += pos
+        z = -1
         vel = [
             (0, r, z),  # x
             (0, -r, z),  # -x
-            (-r, 0, z),  # y
-            (r, 0, z),  # -y
+            (r, 0, z),  # y
+            (-r, 0, z),  # -y
             (0, 0, z),  # z
         ]
-        z = 2
-        rot = [
-            (-r, r, z),  # x
-            (r, r, z),  # -x
-            (0, r, z),  # y
-            (0, -r, z),  # -y
-            (-r, -r, z),  # z
-            (r, -r, z),  # -z
+        inputs += vel
+        z = -2
+        rot_x = [
+            (0, r, z),  # x
+            (0, -r, z),  # -x
+            (r, 0, z),  # y
+            (-r, 0, z),  # -y
+            (0, 0, z),  # z
         ]
-        z = 3
+        inputs += rot_x
+        z = -3
+        rot_y = [
+            (0, r, z),  # x
+            (0, -r, z),  # -x
+            (r, 0, z),  # y
+            (-r, 0, z),  # -y
+            (0, 0, z),  # z
+        ]
+        inputs += rot_y
+        z = -4
+        rot_z = [
+            (0, 0, z),  # x
+            (r, 0, z),  # y
+            (-r, 0, z),  # -y
+            (0, r, z),  # z
+            (0, -r, z),  # -z
+        ]
+        inputs += rot_z
+        z = -5
         omega = [
-            (-r, r, z),  # x
-            (r, r, z),  # -x
+            (r, 0, z),  # x
+            (-r, 0, z),  # -x
             (0, r, z),  # y
             (0, -r, z),  # -y
+            (r, r, z),  # z
             (-r, -r, z),  # z
             (r, -r, z),  # -z
+            (-r, r, z),  # -z
         ]
-        inputs = img + pos + vel + rot + omega
+        inputs += omega
+        z = -6
+        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
+        img = [(x, y, z) for x, y in grid]
+        inputs += img
 
-        z = 4
+        hidden1 = []
+        z = 1
         grid = self._get_grid(12, 12, r * 2, r * 2)
         layer1 = [(x, y, z) for x, y in grid]
-        z = 5
+        hidden1 += layer1
+        z = 2
         layer2 = [(x, y, z) for x, y in grid]
-        hidden1 = layer1 + layer2
+        hidden1 += layer2
 
-        z = 6
+        hidden2 = []
+        z = 3
         grid = self._get_grid(8, 8, r * 2, r * 2)
         layer1 = [(x, y, z) for x, y in grid]
+        hidden2 += layer1
         z = 7
         layer2 = [(x, y, z) for x, y in grid]
-        hidden2 = layer1 + layer2
+        hidden2 += layer2
 
-        z = 8
+        z = 4
         outputs = [
             (r, r, z),  # fr
             (-r, -r, z),  # bl
