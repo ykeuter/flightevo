@@ -78,12 +78,13 @@ class VisionTrainer:
             # print(obs)
             while True:
                 self._env.updateUnity(self._frame_id)
-                self._env.getDepthImage(img)
+                # self._env.getDepthImage(img)
                 # self._env.getQuadState(state)
                 self._current_agent.fitness = max(
                     self._current_agent.fitness, obs[0, 0])
                 actions = self._mlp.activate(
-                    np.concatenate([self._transform_obs(obs), img.reshape(-1)])
+                    # np.concatenate([self._transform_obs(obs), img.reshape(-1)])
+                    self._transform_obs(obs)
                 ).astype(np.float64).reshape(1, 4)
                 # print(actions)
                 self._env.step(actions, obs, rew, done, info)
