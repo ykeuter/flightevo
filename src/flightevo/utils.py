@@ -51,3 +51,59 @@ def msg_to_genome(msg):
     }
     Genome = namedtuple("Genome", ["nodes", "connections"])
     return Genome(nodes, connections)
+
+
+def deactivate_inputs(population, input_keys, output_keys, value):
+    cfg = population.config.genome_config
+    first_genome = next(iter(population.population.values()))
+    for i in input_keys:
+        k0 = cfg.get_new_key(first_genome.nodes)
+        for g in population.population.values():
+            add_selector(g, value, i, k0, cfg)
+            for o in output_keys:
+                k1 = cfg.get_new_key(first_genome.nodes)
+                k2 = cfg.get_new_key(first_genome.nodes)
+                deactivate_inputs(g, o, k0, k1, k2, cfg)
+    population.species.speciate(
+        population.config, population.population, population.generation)
+
+
+def add_selector(genome, value, input_key, selector_key, cfg):
+    n = genome.create_node(cfg, selector_key)
+    n.bias = -value
+    n.aggregation = sum_aggregation
+    n.activation = tri_activation
+    genome.nodes[selector_key] = n
+    genome.add_connection(cfg, input_key, selector_key, 1.0, True)
+
+
+def deactivate_input(
+    genome, output_key, selector_key, replacement_key, agg_key, cfg
+):
+    # update original output node
+    replacement_node = genome.nodes[output_key]
+    replacement_node.key = replacement_key
+    genome.nodes[replacement_key] = replacement_node
+    # update connections
+    conns = [c for (i, o), c in genome.connections if o == output_key]
+    for c in conns:
+        del genome.connections[c.key]
+        c.key = (c.key[0], replacement_key)
+        genome.connections[c.key] = c
+    # create aggregation node
+    n = genome.create_node(cfg, agg_key)
+    n.bias = .0
+    n.aggregation = prod_aggregation
+    n.activation = identity_activation
+    genome.nodes[agg_key] = n
+    # create new output node
+    n = genome.create_node(cfg, output_key)
+    n.bias = .0
+    n.aggregation = sum_aggregation
+    n.activation = identity_activation
+    genome.nodes[output_key] = n
+    # add connections
+    genome.add_connection(cfg, selector_key, agg_key, 1.0, True)
+    genome.add_connection(cfg, replacement_key, agg_key, -1.0, True)
+    genome.add_connection(cfg, agg_key, output_key, 1.0, True)
+    genome.add_connection(cfg, replacement_key, output_key, 1.0, True)
