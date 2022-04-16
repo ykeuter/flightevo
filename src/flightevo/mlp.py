@@ -2,7 +2,8 @@ import torch
 import math
 # import flightros
 from pytorch_neat.cppn import create_cppn
-from pytorch_neat.activations import tanh_activation
+from pytorch_neat.activations import tanh_activation, identity_activation
+from pytorch_neat.aggregations import sum_aggregation
 from std_msgs.msg import (
     Float32MultiArray, MultiArrayDimension, MultiArrayLayout)
 
@@ -67,6 +68,8 @@ class Mlp:
             config,
             ["x_in", "y_in", "z_in", "x_out", "y_out", "z_out"],
             ["weight", "bias"],
+            output_activation=identity_activation,
+            output_aggregation=sum_aggregation,
         )
         coords = [
             torch.tensor(c, dtype=torch.float32, device=device)
