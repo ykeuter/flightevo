@@ -209,10 +209,10 @@ class VisionTrainer:
             (-r, r, z),  # -z
         ]
         inputs += omega
-        z = -6
-        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
-        img = [(x, y, z) for x, y in grid]
-        inputs += img
+        # z = -6
+        # grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
+        # img = [(x, y, z) for x, y in grid]
+        # inputs += img
 
         hidden1 = []
         z = 1
