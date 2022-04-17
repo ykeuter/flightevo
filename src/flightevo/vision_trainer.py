@@ -78,13 +78,13 @@ class VisionTrainer:
             # print(obs)
             while True:
                 self._env.updateUnity(self._frame_id)
-                # self._env.getDepthImage(img)
+                self._env.getDepthImage(img)
                 # self._env.getQuadState(state)
                 self._current_agent.fitness = max(
                     self._current_agent.fitness, obs[0, 0])
                 actions = self._mlp.activate(
-                    # np.concatenate([self._transform_obs(obs), img.reshape(-1)])
-                    self._transform_obs(obs)
+                    np.concatenate([self._transform_obs(obs), img.reshape(-1)])
+                    # self._transform_obs(obs)
                 ).astype(np.float64).reshape(1, 4)
                 # print(actions)
                 self._env.step(actions, obs, rew, done, info)
@@ -210,10 +210,10 @@ class VisionTrainer:
             (-r, r, z),  # -z
         ]
         inputs += omega
-        # z = -6
-        # grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
-        # img = [(x, y, z) for x, y in grid]
-        # inputs += img
+        z = -6
+        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
+        img = [(x, y, z) for x, y in grid]
+        inputs += img
 
         hidden1 = []
         z = 1
