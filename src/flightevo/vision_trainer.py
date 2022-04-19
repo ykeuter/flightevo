@@ -108,7 +108,8 @@ class VisionTrainer:
 
     def _transform_img(self, img):
         scaled_img = resize(
-            torch.tensor(img, device='cpu'),
+            torch.tensor(img.reshape(1, self._img_height, self._img_width),
+                         device='cpu'),
             (self._resolution_height, self._resolution_width))
         return scaled_img.numpy().reshape(-1)
 
@@ -264,7 +265,7 @@ class VisionTrainer:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--winner", default="")
-    parser.add_argument("--checkpoint", default="")
+    parser.add_argument("--checkpoint", default="logs/qsnsqeyy/checkpoint-54")
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
     parser.add_argument("--log", default="logs/" + "".join(
