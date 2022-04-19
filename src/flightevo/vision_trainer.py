@@ -8,11 +8,13 @@ import pickle
 # import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
+import torch
 
 from flightevo.mlp import Mlp
 from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
 from pathlib import Path
+from torchvision.transforms.functional import resize
 
 
 class VisionTrainer:
@@ -50,6 +52,8 @@ class VisionTrainer:
         self._env = VisionEnv_v1(dump(config, Dumper=RoundTripDumper), False)
         self._img_width = self._env.getImgWidth()
         self._img_height = self._env.getImgHeight()
+        self._resolution_width = 2
+        self._resolution_height = 2
 
         self._device = "cuda"
         self._coords = self._get_coords()
@@ -75,21 +79,17 @@ class VisionTrainer:
         try:
             self._reset()
             self._env.reset(obs)
-            # print(obs)
             while True:
                 self._env.updateUnity(self._frame_id)
                 self._env.getDepthImage(img)
                 # self._env.getQuadState(state)
                 self._current_agent.fitness = max(
                     self._current_agent.fitness, obs[0, 0])
-                actions = self._mlp.activate(
-                    np.concatenate([self._transform_obs(obs), img.reshape(-1)])
-                    # self._transform_obs(obs)
-                ).astype(np.float64).reshape(1, 4)
-                # print(actions)
+                actions = self._mlp.activate(np.concatenate([
+                    self._transform_obs(obs),
+                    self._transform_img(img),
+                ])).astype(np.float64).reshape(1, 4)
                 self._env.step(actions, obs, rew, done, info)
-                # print(obs)
-                # print(done)
                 self._frame_id += 1
                 if done[0]:
                     self._reset()
@@ -105,6 +105,12 @@ class VisionTrainer:
                                   self._coords, self._device)
         # print(torch.cuda.memory_allocated())
         self._frame_id = 0
+
+    def _transform_img(self, img):
+        scaled_img = resize(
+            torch.tensor(img, device='cpu'),
+            (self._resolution_height, self._resolution_width))
+        return scaled_img.numpy().reshape(-1)
 
     def _transform_obs(self, obs):
         # obs: pos, eulerzyx, vel, omega
@@ -211,7 +217,8 @@ class VisionTrainer:
         ]
         inputs += omega
         z = -6
-        grid = self._get_grid(self._img_width, self._img_height, r * 2, r * 2)
+        grid = self._get_grid(
+            self._resolution_width, self._resolution_height, r * 2, r * 2)
         img = [(x, y, z) for x, y in grid]
         inputs += img
 
