@@ -3,6 +3,9 @@ from collections import namedtuple
 # from flightros.msg import Genome, Node, Connection
 from pytorch_neat.activations import tanh_activation
 from pytorch_neat.aggregations import sum_aggregation
+import neat
+import argparse
+from pathlib import Path
 
 
 def quaternion_to_euler(x, y, z, w):
@@ -53,17 +56,18 @@ def msg_to_genome(msg):
     return Genome(nodes, connections)
 
 
-def deactivate_inputs(population, input_keys, output_keys, value):
+def deactivate_inputs(population, input_keys, value):
     cfg = population.config.genome_config
+    output_keys = cfg.output_keys
     first_genome = next(iter(population.population.values()))
     for i in input_keys:
-        k0 = cfg.get_new_key(first_genome.nodes)
+        k0 = cfg.get_new_node_key(first_genome.nodes)
         for g in population.population.values():
             add_selector(g, value, i, k0, cfg)
             for o in output_keys:
-                k1 = cfg.get_new_key(first_genome.nodes)
-                k2 = cfg.get_new_key(first_genome.nodes)
-                deactivate_inputs(g, o, k0, k1, k2, cfg)
+                k1 = cfg.get_new_node_key(first_genome.nodes)
+                k2 = cfg.get_new_node_key(first_genome.nodes)
+                negate_output(g, o, k0, k1, k2, cfg)
     population.species.speciate(
         population.config, population.population, population.generation)
 
@@ -71,13 +75,13 @@ def deactivate_inputs(population, input_keys, output_keys, value):
 def add_selector(genome, value, input_key, selector_key, cfg):
     n = genome.create_node(cfg, selector_key)
     n.bias = -value
-    n.aggregation = sum_aggregation
-    n.activation = tri_activation
+    n.aggregation = "sum"
+    n.activation = "tri"
     genome.nodes[selector_key] = n
     genome.add_connection(cfg, input_key, selector_key, 1.0, True)
 
 
-def deactivate_input(
+def negate_output(
     genome, output_key, selector_key, replacement_key, agg_key, cfg
 ):
     # update original output node
@@ -85,7 +89,7 @@ def deactivate_input(
     replacement_node.key = replacement_key
     genome.nodes[replacement_key] = replacement_node
     # update connections
-    conns = [c for (i, o), c in genome.connections if o == output_key]
+    conns = [c for (i, o), c in genome.connections.items() if o == output_key]
     for c in conns:
         del genome.connections[c.key]
         c.key = (c.key[0], replacement_key)
@@ -93,17 +97,31 @@ def deactivate_input(
     # create aggregation node
     n = genome.create_node(cfg, agg_key)
     n.bias = .0
-    n.aggregation = prod_aggregation
-    n.activation = identity_activation
+    n.aggregation = "prod"
+    n.activation = "identity"
     genome.nodes[agg_key] = n
     # create new output node
     n = genome.create_node(cfg, output_key)
     n.bias = .0
-    n.aggregation = sum_aggregation
-    n.activation = identity_activation
+    n.aggregation = "sum"
+    n.activation = "identity"
     genome.nodes[output_key] = n
     # add connections
     genome.add_connection(cfg, selector_key, agg_key, 1.0, True)
     genome.add_connection(cfg, replacement_key, agg_key, -1.0, True)
     genome.add_connection(cfg, agg_key, output_key, 1.0, True)
     genome.add_connection(cfg, replacement_key, output_key, 1.0, True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint", default="logs/qsnsqeyy/checkpoint-54")
+    parser.add_argument("--inputs", type=int, nargs="+", default=[-3, -6])
+    parser.add_argument("--value", type=float, default=-6)
+    args = parser.parse_args()
+
+    pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+    deactivate_inputs(pop, args.inputs, args.value)
+    prefix = str(Path(args.checkpoint).parent / "transformed-neat-checkpoint-")
+    cp = neat.Checkpointer(filename_prefix=prefix)
+    cp.save_checkpoint(pop.config, pop.population, pop.species, pop.generation)
