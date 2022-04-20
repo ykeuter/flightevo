@@ -109,6 +109,8 @@ class VisionTrainer:
         self._frame_id = 0
 
     def _transform_img(self, img):
+        if self._resolution_height == 0 or self._resolution_width == 0:
+            return np.array([])
         scaled_img = resize(
             torch.tensor(img.reshape(1, self._img_height, self._img_width),
                          device='cpu'),
