@@ -5,6 +5,7 @@ import argparse
 import random
 import string
 import pickle
+import shutil
 # import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
@@ -19,23 +20,25 @@ from torchvision.transforms.functional import resize
 
 class VisionTrainer:
     def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
-        self._neat_config = neat.Config(
-            neat.DefaultGenome,
-            neat.DefaultReproduction,
-            neat.DefaultSpeciesSet,
-            neat.DefaultStagnation,
-            neat_cfg,
-        )
         if winner_pickle:
             with open(winner_pickle, "rb") as f:
                 w = pickle.load(f)
             self._generator = self._yield(w)
         else:
             Path(log_dir).mkdir()
+            shutil.copy2(env_cfg, log_dir)
             if checkpoint:
                 pop = neat.Checkpointer.restore_checkpoint(checkpoint)
                 self._neat_config = pop.config
             else:
+                shutil.copy2(neat_cfg, log_dir)
+                self._neat_config = neat.Config(
+                    neat.DefaultGenome,
+                    neat.DefaultReproduction,
+                    neat.DefaultSpeciesSet,
+                    neat.DefaultStagnation,
+                    neat_cfg,
+                )
                 pop = neat.Population(self._neat_config)
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
