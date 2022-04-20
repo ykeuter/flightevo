@@ -52,8 +52,9 @@ class VisionTrainer:
         self._env = VisionEnv_v1(dump(config, Dumper=RoundTripDumper), False)
         self._img_width = self._env.getImgWidth()
         self._img_height = self._env.getImgHeight()
-        self._resolution_width = 2
-        self._resolution_height = 2
+        self._resolution_width = config["inputs"]["resolution_width"]
+        self._resolution_height = config["inputs"]["resolution_height"]
+        self._sim_dt = config["simulation"]["sim_dt"]
 
         self._device = "cuda"
         self._coords = self._get_coords()
@@ -83,8 +84,9 @@ class VisionTrainer:
                 self._env.updateUnity(self._frame_id)
                 self._env.getDepthImage(img)
                 # self._env.getQuadState(state)
-                self._current_agent.fitness = max(
-                    self._current_agent.fitness, obs[0, 0])
+                # self._current_agent.fitness = max(
+                #     self._current_agent.fitness, obs[0, 0])
+                self._current_agent.fitness = self._frame_id * self._sim_dt
                 actions = self._mlp.activate(np.concatenate([
                     self._transform_obs(obs),
                     self._transform_img(img),
@@ -265,7 +267,7 @@ class VisionTrainer:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--winner", default="")
-    parser.add_argument("--checkpoint", default="logs/qsnsqeyy/checkpoint-54")
+    parser.add_argument("--checkpoint", default="")
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
     parser.add_argument("--log", default="logs/" + "".join(
