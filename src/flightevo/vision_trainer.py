@@ -29,6 +29,8 @@ class VisionTrainer:
             shutil.copy2(env_cfg, log_dir)
             if checkpoint:
                 pop = neat.Checkpointer.restore_checkpoint(checkpoint)
+                for s in pop.species.species.values():
+                    s.last_improved = pop.generation
                 self._neat_config = pop.config
             else:
                 shutil.copy2(neat_cfg, log_dir)
