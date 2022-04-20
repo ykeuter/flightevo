@@ -16,6 +16,7 @@ from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
 from pathlib import Path
 from torchvision.transforms.functional import resize
+from flightevo.utils import replace_config, reset_stagnation
 
 
 class VisionTrainer:
@@ -27,21 +28,21 @@ class VisionTrainer:
         else:
             Path(log_dir).mkdir()
             shutil.copy2(env_cfg, log_dir)
+            shutil.copy2(neat_cfg, log_dir)
+            self._neat_config = neat.Config(
+                neat.DefaultGenome,
+                neat.DefaultReproduction,
+                neat.DefaultSpeciesSet,
+                neat.DefaultStagnation,
+                neat_cfg,
+            )
             if checkpoint:
                 pop = neat.Checkpointer.restore_checkpoint(checkpoint)
-                for s in pop.species.species.values():
-                    s.last_improved = pop.generation
-                self._neat_config = pop.config
+                pop = replace_config(pop, self._neat_config)
+                reset_stagnation(pop)
             else:
-                shutil.copy2(neat_cfg, log_dir)
-                self._neat_config = neat.Config(
-                    neat.DefaultGenome,
-                    neat.DefaultReproduction,
-                    neat.DefaultSpeciesSet,
-                    neat.DefaultStagnation,
-                    neat_cfg,
-                )
                 pop = neat.Population(self._neat_config)
+
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
             ))

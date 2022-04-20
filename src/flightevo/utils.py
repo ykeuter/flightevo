@@ -25,6 +25,18 @@ def quaternion_to_euler(x, y, z, w):
     return roll, pitch, yaw
 
 
+def replace_config(pop, config):
+    config.genome_config.node_indexer = pop.config.genome_config.node_indexer
+    return neat.Population(
+        config, (pop.population, pop.species, pop.generation))
+
+
+def reset_stagnation(pop):
+    for s in pop.species.species.values():
+        s.last_improved = pop.generation
+        s.fitness_history = []
+
+
 def genome_to_msg(genome):
     msg = Genome(
         nodes=[Node(key=k, bias=n.bias) for k, n in genome.nodes.items()],
