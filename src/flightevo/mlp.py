@@ -2,7 +2,7 @@ import torch
 import math
 # import flightros
 from pytorch_neat.cppn import create_cppn
-from pytorch_neat.activations import tanh_activation, identity_activation
+from pytorch_neat.activations import sigmoid_activation, identity_activation
 from pytorch_neat.aggregations import sum_aggregation
 from std_msgs.msg import (
     Float32MultiArray, MultiArrayDimension, MultiArrayLayout)
@@ -13,7 +13,7 @@ class Mlp:
         self.device = device
         self.weights = weights
         self.biases = biases
-        self.activation = tanh_activation
+        self.activation = sigmoid_activation
 
     def activate(self, inputs):
         with torch.no_grad():
