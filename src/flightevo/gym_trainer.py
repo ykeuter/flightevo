@@ -6,7 +6,6 @@ import random
 import string
 import pickle
 import shutil
-# import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
 import torch
@@ -247,11 +246,11 @@ class VisionTrainer:
         grid = self._get_grid(8, 8, r * 2, r * 2)
         layer1 = [(x, y, z) for x, y in grid]
         hidden2 += layer1
-        z = 7
+        z = 4
         layer2 = [(x, y, z) for x, y in grid]
         hidden2 += layer2
 
-        z = 4
+        z = 5
         outputs = [
             (r, r, z),  # fr
             (-r, -r, z),  # bl
