@@ -128,43 +128,43 @@ class VisionTrainer:
         v = obs.reshape(-1)
         return np.array([
             # position
-            v[1],  # y
-            -v[1],  # -y
-            v[2],  # z
-            v[2],  # -z
+            max(-v[1], .0),  # -y
+            max(v[1], .0),  # y
+            max(v[2], .0),  # z
+            max(-v[2], .0),  # -z
             # velocity
-            v[3],  # x
-            -v[3],  # -x
-            v[4],  # y
-            -v[4],  # -y
+            max(v[3], .0),  # x
+            max(-v[3], .0),  # -x
+            max(-v[4], .0),  # -y
+            max(v[4], .0),  # y
             v[5],  # z
             # rot_x
-            v[6],  # x
-            -v[6],  # -x
-            v[7],  # y
-            -v[7],  # -y
+            max(v[6], .0),  # x
+            max(-v[6], .0),  # -x
+            max(-v[7], .0),  # -y
+            max(v[7], .0),  # y
             v[8],  # z
             # rot_y
-            v[9],  # x
-            -v[9],  # -x
-            v[10],  # y
-            -v[10],  # -y
+            max(v[9], .0),  # x
+            max(-v[9], .0),  # -x
+            max(v[10], .0),  # y
+            max(-v[10], .0),  # -y
             v[11],  # z
             # rot_z
             v[12],  # x
-            v[13],  # y
-            -v[13],  # -y
-            v[14],  # z
-            -v[14],  # -z
+            max(-v[13], .0),  # -y
+            max(v[13], .0),  # y
+            max(v[14], .0),  # z
+            max(-v[14], .0),  # -z
             # angular velocity
-            v[15],  # x
-            -v[15],  # -x
-            v[16],  # y
-            -v[16],  # -y
-            v[17],  # z
-            v[17],  # z
-            -v[17],  # -z
-            -v[17],  # -z
+            max(v[15], .0),  # x
+            max(-v[15], .0),  # -x
+            max(v[16], .0),  # y
+            max(-v[16], .0),  # -y
+            max(v[17], .0),  # z
+            max(v[17], .0),  # z
+            max(-v[17], .0),  # -z
+            max(-v[17], .0),  # -z
         ], dtype=np.float32)
 
     def _get_coords(self):
@@ -173,8 +173,8 @@ class VisionTrainer:
         inputs = []
         z = 0
         pos = [
-            (r, 0, z),  # y
-            (-r, 0, z),  # -y
+            (r, 0, z),  # -y
+            (-r, 0, z),  # y
             (0, r, z),  # z
             (0, -r, z),  # -z
         ]
@@ -183,8 +183,8 @@ class VisionTrainer:
         vel = [
             (0, r, z),  # x
             (0, -r, z),  # -x
-            (r, 0, z),  # y
-            (-r, 0, z),  # -y
+            (r, 0, z),  # -y
+            (-r, 0, z),  # y
             (0, 0, z),  # z
         ]
         inputs += vel
@@ -192,8 +192,8 @@ class VisionTrainer:
         rot_x = [
             (0, r, z),  # x
             (0, -r, z),  # -x
-            (r, 0, z),  # y
-            (-r, 0, z),  # -y
+            (r, 0, z),  # -y
+            (-r, 0, z),  # y
             (0, 0, z),  # z
         ]
         inputs += rot_x
@@ -209,8 +209,8 @@ class VisionTrainer:
         z = -4
         rot_z = [
             (0, 0, z),  # x
-            (r, 0, z),  # y
-            (-r, 0, z),  # -y
+            (r, 0, z),  # -y
+            (-r, 0, z),  # y
             (0, r, z),  # z
             (0, -r, z),  # -z
         ]
