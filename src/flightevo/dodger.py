@@ -1,5 +1,6 @@
 from collections import namedtuple
 from torchvision.transforms.functional import resize
+import cv2
 import torch
 
 from flightevo.mlp import Mlp
@@ -25,7 +26,8 @@ class Dodger:
         self._mlp = Mlp.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
-        a = self._mlp.activate(img)  # up, down, right, left
+        i = self._transform_img(img)
+        a = self._mlp.activate(i)  # up, down, right, left
         vx = self.SPEED_X
         vy = (a[3] if a[3] > a[2] else -a[2]) * self.MAX_SPEED
         vz = (a[0] if a[0] > a[1] else -a[1]) * self.MAX_SPEED
@@ -81,10 +83,5 @@ class Dodger:
         ]
 
     def _transform_img(self, img):
-        if self._resolution_height == 0 or self._resolution_width == 0:
-            return np.array([])
-        scaled_img = resize(
-            torch.tensor(img.reshape(1, self._img_height, self._img_width),
-                         device='cpu'),
-            (self._resolution_height, self._resolution_width))
-        return scaled_img.numpy().reshape(-1)
+        return cv2.resize(
+            img, (self._resolution_width, self._resolution_height)).reshape(-1)
