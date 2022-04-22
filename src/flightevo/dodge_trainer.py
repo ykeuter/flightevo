@@ -1,4 +1,5 @@
 import rospy
+import time
 import neat
 import numpy as np
 import argparse
@@ -67,6 +68,7 @@ class DodgeTrainer:
         self._start_time = None
         self._lock = Lock()
         self._crashed = False
+        self._active = False
 
     def run(self):
         rospy.Subscriber(
@@ -98,15 +100,16 @@ class DodgeTrainer:
         self._start_time = None
         self._state = None
         # make sure dodger has no more cached actions
-        rospy.sleep(.1)
+        time.sleep(.1)
         self._off_pub.publish()
         # make sure off signal is processed
-        rospy.sleep(.1)
+        time.sleep(.1)
         self._reset_pub.publish()
         self._enable_pub.publish(True)
         # make sure reset is processed
-        rospy.sleep(.2)
+        time.sleep(.2)
         self._crashed = False
+        self._active = True
 
     def state_callback(self, msg):
         if not self._active:
@@ -128,6 +131,8 @@ class DodgeTrainer:
         self._state = AgileQuadState(t=msg.t)
 
     def img_callback(self, msg):
+        if not self._active:
+            return
         # store state in case of reset
         s = self._state
         if s is None:
@@ -147,6 +152,8 @@ class DodgeTrainer:
         self._cmd_pub.publish(msg)
 
     def obstacle_callback(self, msg):
+        if not self._active:
+            return
         o = msg.obstacles[0]
         d = np.linalg.norm(np.array(
             [o.position.x, o.position.y, o.position.z]))
