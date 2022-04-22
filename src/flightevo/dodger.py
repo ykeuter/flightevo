@@ -21,7 +21,7 @@ class Dodger:
         self._coords = self._get_coords()
 
     def load(self, cppn, cfg):
-        del self_mlp
+        del self._mlp
         self._mlp = Mlp.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):

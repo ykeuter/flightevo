@@ -6,6 +6,7 @@ import random
 import string
 import shutil
 import pickle
+from threading import Lock
 from pathlib import Path
 from dodgeros_msgs.msg import QuadState, Command
 from envsim_msgs.msg import ObstacleArray
@@ -64,6 +65,8 @@ class DodgeTrainer:
         self._cv_bridge = CvBridge()
         self._state = None
         self._start_time = None
+        self._lock = Lock()
+        self._crashed = False
 
     def run(self):
         rospy.Subscriber(
@@ -90,28 +93,35 @@ class DodgeTrainer:
     def _reset(self):
         self._current_genome = next(self._generator)
         self._current_genome.fitness = 0
-        self._dodger.load(self._current_genome, self._neat_config)
+        with self._lock:
+            self._dodger.load(self._current_genome, self._neat_config)
         self._start_time = None
         self._state = None
+        # make sure dodger has no more cached actions
+        rospy.sleep(.1)
         self._off_pub.publish()
+        # make sure off signal is processed
+        rospy.sleep(.1)
         self._reset_pub.publish()
         self._enable_pub.publish(True)
-        rospy.sleep(.5)
+        # make sure reset is processed
+        rospy.sleep(.2)
+        self._crashed = False
 
     def state_callback(self, msg):
+        if self._crashed:
+            return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
-            self._reset()
-            return
+            return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
                         msg.pose.position.z])
         if (
             (pos < self._bounding_box[:, 0]) | (pos > self._bounding_box[:, 1])
         ).any():
-            self._reset()
-            return
+            return self._reset()
         self._current_genome.fitness = msg.pose.position.x
         self._state = AgileQuadState(t=msg.t)
 
@@ -120,8 +130,9 @@ class DodgeTrainer:
             return
         cv_image = self._cv_bridge.imgmsg_to_cv2(
             msg, desired_encoding='passthrough')
-        command = self._dodger.compute_command_vision_based(
-            self._state, cv_image)
+        with self._lock:
+            command = self._dodger.compute_command_vision_based(
+                self._state, cv_image)
         msg = TwistStamped()
         msg.header.stamp = rospy.Time(command.t)
         msg.twist.linear.x = command.velocity[0]
@@ -137,7 +148,7 @@ class DodgeTrainer:
         d = np.linalg.norm(np.array(
             [o.position.x, o.position.y, o.position.z]))
         if d - o.scale < 0:
-            self._reset()
+            self._crashed = True
 
 
 if __name__ == "__main__":
