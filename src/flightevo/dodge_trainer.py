@@ -10,34 +10,34 @@ from pathlib import Path
 from dodgeros_msgs.msg import QuadState, Command
 from envsim_msgs.msg import ObstacleArray
 from sensor_msgs.msg import Image
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool
 from cv_bridge import CvBridge
 from ruamel.yaml import YAML
 from geometry_msgs.msg import TwistStamped
 from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
 
-from flightevo.utils import replace_config, reset_stagnation
+from flightevo.utils import replace_config, reset_stagnation, repeat_yield
 from flightevo.dodger import Dodger, AgileQuadState
 
 
 class DodgeTrainer:
     def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
+        self._neat_config = neat.Config(
+            neat.DefaultGenome,
+            neat.DefaultReproduction,
+            neat.DefaultSpeciesSet,
+            neat.DefaultStagnation,
+            neat_cfg,
+        )
         if winner_pickle:
             with open(winner_pickle, "rb") as f:
                 w = pickle.load(f)
-            self._generator = self._yield(w)
+            self._generator = repeat_yield(w)
         else:
             Path(log_dir).mkdir()
             shutil.copy2(env_cfg, log_dir)
             shutil.copy2(neat_cfg, log_dir)
-            self._neat_config = neat.Config(
-                neat.DefaultGenome,
-                neat.DefaultReproduction,
-                neat.DefaultSpeciesSet,
-                neat.DefaultStagnation,
-                neat_cfg,
-            )
             if checkpoint:
                 pop = neat.Checkpointer.restore_checkpoint(checkpoint)
                 pop = replace_config(pop, self._neat_config)
@@ -65,10 +65,6 @@ class DodgeTrainer:
         self._state = None
         self._start_time = None
 
-    def _yield(self, x):
-        while True:
-            yield x
-
     def run(self):
         rospy.Subscriber(
             "/kingfisher/dodgeros_pilot/state", QuadState, self.state_callback,
@@ -82,29 +78,38 @@ class DodgeTrainer:
         self._cmd_pub = rospy.Publisher(
             "/kingfisher/dodgeros_pilot/velocity_command", TwistStamped,
             queue_size=1)
+        self._off_pub = rospy.Publisher(
+            "/kingfisher/dodgeros_pilot/off", Empty, queue_size=1)
         self._reset_pub = rospy.Publisher(
             "/kingfisher/dodgeros_pilot/reset_sim", Empty, queue_size=1)
+        self._enable_pub = rospy.Publisher(
+            "/kingfisher/dodgeros_pilot/enable", Bool, queue_size=1)
         self._reset()
         rospy.spin()
 
     def _reset(self):
         self._current_genome = next(self._generator)
         self._current_genome.fitness = 0
+        self._dodger.load(self._current_genome, self._neat_config)
         self._start_time = None
         self._state = None
+        self._off_pub.publish()
         self._reset_pub.publish()
+        self._enable_pub.publish(True)
         rospy.sleep(.5)
 
     def state_callback(self, msg):
-        if self._current_start_time is None:
-            self._current_start_time = msg.t
-        if msg.t - self._current_start_time > self._timeout:
+        if self._start_time is None:
+            self._start_time = msg.t
+        if msg.t - self._start_time > self._timeout:
             self._reset()
             return
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
                         msg.pose.position.z])
-        if (pos < self._bounding_box[:, 0] | pos > self._bounding_box[:, 1]):
+        if (
+            (pos < self._bounding_box[:, 0]) | (pos > self._bounding_box[:, 1])
+        ).any():
             self._reset()
             return
         self._current_genome.fitness = msg.pose.position.x

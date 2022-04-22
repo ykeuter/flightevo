@@ -125,6 +125,11 @@ def negate_output(
     genome.add_connection(cfg, replacement_key, output_key, 1.0, True)
 
 
+def repeat_yield(x):
+    while True:
+        yield x
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default="logs/qsnsqeyy/checkpoint-54")
