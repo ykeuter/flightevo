@@ -26,16 +26,11 @@ class Dodger:
 
     def compute_command_vision_based(self, state, img):
         a = self._mlp.activate(img)  # up, down, right, left
+        vx = self.SPEED_X
+        vy = (a[3] if a[3] > a[2] else -a[2]) * self.MAX_SPEED
+        vz = (a[0] if a[0] > a[1] else -a[1]) * self.MAX_SPEED
         return AgileCommand(
-            t=state.t,
-            mode=2,
-            yawrate=0,
-            velocity=[
-                self.SPEED_X,
-                (a[3] - a[2]) * self.MAX_SPEED,
-                (a[0] - a[1]) * self.MAX_SPEED
-            ]
-        )
+            t=state.t, mode=2, yawrate=0, velocity=[vx, vy, vz])
 
     def _get_coords(self):
         r = 5
