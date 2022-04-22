@@ -57,10 +57,10 @@ class DodgeTrainer:
             config = YAML().load(f)
         self._dodger = Dodger(config["inputs"]["resolution_width"],
                               config["inputs"]["resolution_height"])
-        self._xmax = int(config['target'])
-        self._timeout = config['timeout']
+        self._xmax = int(config['environment']['target'])
+        self._timeout = config['environment']['timeout']
         self._bounding_box = np.reshape(np.array(
-            config['bounding_box'], dtype=float), (3, 2))
+            config['environment']['world_box'], dtype=float), (3, 2))
         self._cv_bridge = CvBridge()
         self._state = None
         self._start_time = None
@@ -70,16 +70,20 @@ class DodgeTrainer:
             yield x
 
     def run(self):
-        rospy.Subscriber("state", QuadState, self.state_callback,
-                         queue_size=1, tcp_nodelay=True)
-        rospy.Subscriber("depth", Image, self.img_callback,
-                         queue_size=1, tcp_nodelay=True)
-        rospy.Subscriber("obstacles", ObstacleArray, self.obstacle_callback,
-                         queue_size=1, tcp_nodelay=True)
-        self._cmd_pub = rospy.Publisher("velocity_command", TwistStamped,
-                                        queue_size=1)
-        self._reset_pub = rospy.Publisher("reset_sim", Empty,
-                                          queue_size=1)
+        rospy.Subscriber(
+            "/kingfisher/dodgeros_pilot/state", QuadState, self.state_callback,
+            queue_size=1, tcp_nodelay=True)
+        rospy.Subscriber(
+            "/kingfisher/dodgeros_pilot/unity/depth", Image, self.img_callback,
+            queue_size=1, tcp_nodelay=True)
+        rospy.Subscriber(
+            "/kingfisher/dodgeros_pilot/groundtruth/obstacles", ObstacleArray,
+            self.obstacle_callback, queue_size=1, tcp_nodelay=True)
+        self._cmd_pub = rospy.Publisher(
+            "/kingfisher/dodgeros_pilot/velocity_command", TwistStamped,
+            queue_size=1)
+        self._reset_pub = rospy.Publisher(
+            "/kingfisher/dodgeros_pilot/reset_sim", Empty, queue_size=1)
         self._reset()
         rospy.spin()
 
@@ -142,7 +146,7 @@ if __name__ == "__main__":
         for _ in range(8)
     ))
     args = parser.parse_args()
-    rospy.init_node('trainer', anonymous=True)
+    rospy.init_node('dodge_trainer', anonymous=False)
     t = DodgeTrainer(args.env, args.neat, args.log,
                      args.winner, args.checkpoint)
     t.run()

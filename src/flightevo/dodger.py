@@ -14,8 +14,8 @@ class Dodger:
     MAX_SPEED = 3.0
 
     def __init__(self, resolution_width, resolution_height):
-        self._res_width = resolution_width
-        self._res_height = resolution_height
+        self._resolution_width = resolution_width
+        self._resolution_height = resolution_height
         self._mlp = None
         self._device = "cuda"
         self._coords = self._get_coords()
