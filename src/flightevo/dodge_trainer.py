@@ -89,6 +89,8 @@ class DodgeTrainer:
             "/kingfisher/dodgeros_pilot/reset_sim", Empty, queue_size=1)
         self._enable_pub = rospy.Publisher(
             "/kingfisher/dodgeros_pilot/enable", Bool, queue_size=1)
+        self._start_pub = rospy.Publisher(
+            "/kingfisher/dodgeros_pilot/start", Empty, queue_size=1)
         self._reset()
         rospy.spin()
 
@@ -107,7 +109,10 @@ class DodgeTrainer:
         self._reset_pub.publish()
         self._enable_pub.publish(True)
         # make sure reset is processed
-        time.sleep(.2)
+        time.sleep(.1)
+        self._start_pub.publish()
+        # make sure drone took off
+        time.sleep(.1)
         self._crashed = False
         self._active = True
 
