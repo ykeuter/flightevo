@@ -109,6 +109,8 @@ class DodgeTrainer:
         self._crashed = False
 
     def state_callback(self, msg):
+        if not self._active:
+            return
         if self._crashed:
             return self._reset()
         if self._start_time is None:
@@ -126,13 +128,14 @@ class DodgeTrainer:
         self._state = AgileQuadState(t=msg.t)
 
     def img_callback(self, msg):
-        if self._state is None:
+        # store state in case of reset
+        s = self._state
+        if s is None:
             return
         cv_image = self._cv_bridge.imgmsg_to_cv2(
             msg, desired_encoding='passthrough')
         with self._lock:
-            command = self._dodger.compute_command_vision_based(
-                self._state, cv_image)
+            command = self._dodger.compute_command_vision_based(s, cv_image)
         msg = TwistStamped()
         msg.header.stamp = rospy.Time(command.t)
         msg.twist.linear.x = command.velocity[0]
@@ -141,7 +144,7 @@ class DodgeTrainer:
         msg.twist.angular.x = 0.0
         msg.twist.angular.y = 0.0
         msg.twist.angular.z = command.yawrate
-        self._cmd_pub(msg)
+        self._cmd_pub.publish(msg)
 
     def obstacle_callback(self, msg):
         o = msg.obstacles[0]
