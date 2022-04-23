@@ -1,5 +1,4 @@
 from collections import namedtuple
-from torchvision.transforms.functional import resize
 import cv2
 import torch
 
@@ -11,8 +10,7 @@ AgileQuadState = namedtuple("AgileCommand", ["t"])
 
 
 class Dodger:
-    SPEED_X = 1.0
-    MAX_SPEED = 3.0
+    MAX_SPEED = 1.0
 
     def __init__(self, resolution_width, resolution_height):
         self._resolution_width = resolution_width
@@ -27,8 +25,8 @@ class Dodger:
 
     def compute_command_vision_based(self, state, img):
         i = self._transform_img(img)
-        a = self._mlp.activate(i)  # up, down, right, left
-        vx = self.SPEED_X
+        a = self._mlp.activate(i)  # up, down, right, left, forward
+        vx = a[4] * self.MAX_SPEED
         vy = (a[3] if a[3] > a[2] else -a[2]) * self.MAX_SPEED
         vz = (a[0] if a[0] > a[1] else -a[1]) * self.MAX_SPEED
         return AgileCommand(
@@ -46,7 +44,7 @@ class Dodger:
 
         hidden1 = []
         z = 1
-        grid = self._get_grid(12, 12, r * 2, r * 2)
+        grid = self._get_grid(4, 4, r * 2, r * 2)  # max 12x12
         layer1 = [(x, y, z) for x, y in grid]
         hidden1 += layer1
         z = 2
@@ -55,7 +53,7 @@ class Dodger:
 
         hidden2 = []
         z = 3
-        grid = self._get_grid(8, 8, r * 2, r * 2)
+        grid = self._get_grid(4, 4, r * 2, r * 2)  # max 8x8
         layer1 = [(x, y, z) for x, y in grid]
         hidden2 += layer1
         z = 4
@@ -68,6 +66,7 @@ class Dodger:
             (0, -r, z),  # down
             (r, 0, z),  # right
             (-r, 0, z),  # left
+            (0, 0, z),  # forward
         ]
 
         return [inputs, hidden1, hidden2, outputs]
@@ -83,5 +82,13 @@ class Dodger:
         ]
 
     def _transform_img(self, img):
-        return cv2.resize(
-            img, (self._resolution_width, self._resolution_height)).reshape(-1)
+        r, c = img.shape
+        k0 = int(r / self._resolution_height)
+        k1 = int(c / self._resolution_width)
+        # copy needed due to non-writeable nparray
+        new_img = 1 - torch.tensor(img) \
+            .unfold(0, k0, k0).unfold(1, k1, k1).amax((-1, -2),)
+        # print(r, c)
+        # cv2.imshow("depth resized", new_img.numpy())
+        # cv2.waitKey()
+        return new_img.view(-1)

@@ -17,11 +17,11 @@ class Mlp:
 
     def activate(self, inputs):
         with torch.no_grad():
-            x = torch.tensor(
+            x = torch.as_tensor(
                 inputs, dtype=torch.float32, device=self.device).unsqueeze(1)
             for w, b in zip(self.weights, self.biases):
                 x = self.activation(w.mm(x) + b)
-        return x.squeeze(1).cpu().numpy()
+        return x.squeeze(1)
 
     def to_msg(self):
         return flightros.msg.Mlp(
