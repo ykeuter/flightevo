@@ -95,7 +95,11 @@ class DodgeTrainer:
         rospy.spin()
 
     def _reset(self):
-        self._current_genome = next(self._generator)
+        self._active = False
+        try:
+            self._current_genome = next(self._generator)
+        except StopIteration:
+            rospy.signal_shutdown("No more genomes!")
         self._current_genome.fitness = 0
         with self._lock:
             self._dodger.load(self._current_genome, self._neat_config)
@@ -112,7 +116,7 @@ class DodgeTrainer:
         time.sleep(.1)
         self._start_pub.publish()
         # make sure drone took off
-        time.sleep(.1)
+        time.sleep(.5)
         self._crashed = False
         self._active = True
 
