@@ -87,7 +87,7 @@ class Dodger:
         k1 = int(c / self._resolution_width)
         # copy needed due to non-writeable nparray
         new_img = 1 - torch.tensor(img) \
-            .unfold(0, k0, k0).unfold(1, k1, k1).amax((-1, -2),)
+            .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
         # print(r, c)
         # cv2.imshow("depth resized", new_img.numpy())
         # cv2.waitKey()
