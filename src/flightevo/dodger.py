@@ -31,10 +31,39 @@ class Dodger:
 
     def compute_command_vision_based(self, state, img):
         i = self._transform_img(img)
-        a = self._mlp.activate(i)  # up, down, right, left, forward
-        vx = a[4] * self.MAX_SPEED
-        vy = (a[3] if a[3] > a[2] else -a[2]) * self.MAX_SPEED
-        vz = (a[0] if a[0] > a[1] else -a[1]) * self.MAX_SPEED
+
+        a = self._mlp.activate(i)
+
+        index = a.argmax().item()
+        if index == 0:  # up
+            vz = self.MAX_SPEED
+            vy = 0
+        elif index == 1:  # upper right
+            vz = self.MAX_SPEED
+            vy = -self.MAX_SPEED
+        elif index == 2:  # right
+            vz = 0
+            vy = -self.MAX_SPEED
+        elif index == 3:  # lower right
+            vz = -self.MAX_SPEED
+            vy = -self.MAX_SPEED
+        elif index == 4:  # down
+            vz = -self.MAX_SPEED
+            vy = 0
+        elif index == 5:  # lower left
+            vz = -self.MAX_SPEED
+            vy = self.MAX_SPEED
+        elif index == 6:  # left
+            vz = 0
+            vy = self.MAX_SPEED
+        elif index == 7:  # upper left
+            vz = self.MAX_SPEED
+            vy = self.MAX_SPEED
+        elif index == 8:  # center
+            vz = 0
+            vy = 0
+
+        vx = self.MAX_SPEED
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=[vx, vy, vz])
 
@@ -69,10 +98,14 @@ class Dodger:
         # z = 5
         outputs = [
             (0, r, ),  # up
-            (0, -r, ),  # down
+            (r, r, ),  # upper right
             (r, 0, ),  # right
+            (r, -r, ),  # lower right
+            (0, -r, ),  # down
+            (-r, -r, ),  # lower left
             (-r, 0, ),  # left
-            (0, 0, ),  # forward
+            (-r, r, ),  # upper left
+            (0, 0, ),  # center
         ]
 
         # return [inputs, hidden1, hidden2, outputs]
