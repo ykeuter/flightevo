@@ -137,7 +137,7 @@ class DodgeTrainer:
         ).any():
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
-        self._state = AgileQuadState(t=msg.t)
+        self._state = AgileQuadState(t=msg.t, pos=pos)
 
     def img_callback(self, msg):
         if not self._active:

@@ -9,7 +9,7 @@ from flightevo.mlp2d import Mlp2D
 
 
 AgileCommand = namedtuple("AgileCommand", ["mode", "velocity", "yawrate", "t"])
-AgileQuadState = namedtuple("AgileCommand", ["t"])
+AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
@@ -30,9 +30,17 @@ class Dodger:
         self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
+        s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
+        if state.pos[1] > 0:  # y
+            s[3] = state.pos[1] / 10
+        else:
+            s[1] = -state.pos[1] / 10
+        if state.pos[2] > 5:  # z
+            s[0] = (state.pos[2] - 5) / 5
+        else:
+            s[2] = (5 - state.pos[2]) / 5
         i = self._transform_img(img)
-
-        a = self._mlp.activate(i)
+        a = self._mlp.activate(torch.cat((s, i),))
 
         index = a.argmax().item()
         if index == 0:  # up
@@ -62,7 +70,6 @@ class Dodger:
         elif index == 8:  # center
             vz = 0
             vy = 0
-
         vx = self.MAX_SPEED
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=[vx, vy, vz])
@@ -70,9 +77,15 @@ class Dodger:
     def _get_coords(self):
         r = 5
 
-        inputs = []
+        # inputs = []
         # z = 0
-        grid = self._get_grid(
+        state = [
+            (0, r * 2, ),  # up
+            (r * 2, 0, ),  # right
+            (0, -r * 2, ),  # down
+            (-r * 2, 0, ),  # left
+        ]
+        img = self._get_grid(
             self._resolution_width, self._resolution_height, r * 2, r * 2)
         # img = [(x, y, z) for x, y in grid]
         # inputs += img
@@ -109,7 +122,7 @@ class Dodger:
         ]
 
         # return [inputs, hidden1, hidden2, outputs]
-        return [grid, outputs]
+        return [state + img, outputs]
 
     def _get_grid(self, ncols, nrows, width, height):
         return [
@@ -126,7 +139,7 @@ class Dodger:
         k0 = int(r / self._resolution_height)
         k1 = int(c / self._resolution_width)
         # copy needed due to non-writeable nparray
-        new_img = torch.tensor(img) \
+        new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
         msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
         self._img_pub.publish(msg)
