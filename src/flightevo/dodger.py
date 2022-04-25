@@ -1,6 +1,9 @@
 from collections import namedtuple
 import cv2
+import rospy
 import torch
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 from flightevo.mlp2d import Mlp2D
 
@@ -18,6 +21,9 @@ class Dodger:
         self._mlp = None
         self._device = "cuda"
         self._coords = self._get_coords()
+        self._img_pub = rospy.Publisher(
+            "/kingfisher/dodger/depth", Image, queue_size=1)
+        self._cv_bridge = CvBridge()
 
     def load(self, cppn, cfg):
         del self._mlp
@@ -89,6 +95,8 @@ class Dodger:
         # copy needed due to non-writeable nparray
         new_img = torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
+        msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
+        self._img_pub.publish(msg)
         # print(r, c)
         # cv2.imshow("depth resized", new_img.numpy())
         # cv2.waitKey()
