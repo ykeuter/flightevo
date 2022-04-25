@@ -98,7 +98,7 @@ class DodgeTrainer:
         self._active = False
         try:
             self._current_genome = next(self._generator)
-        except StopIteration:
+        except (StopIteration, neat.CompleteExtinctionException):
             rospy.signal_shutdown("No more genomes!")
         self._current_genome.fitness = 0
         with self._lock:
