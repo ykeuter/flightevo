@@ -21,3 +21,7 @@ img 6x4. based off nkrom5r5. easy 2
 # wgyeegl4
 
 no img. just hovering.
+
+# odw0knkr
+
+simplify. only img. linvel
