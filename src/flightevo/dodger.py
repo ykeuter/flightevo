@@ -2,7 +2,7 @@ from collections import namedtuple
 import cv2
 import torch
 
-from flightevo.mlp import Mlp
+from flightevo.mlp2d import Mlp2D
 
 
 AgileCommand = namedtuple("AgileCommand", ["mode", "velocity", "yawrate", "t"])
@@ -21,7 +21,7 @@ class Dodger:
 
     def load(self, cppn, cfg):
         del self._mlp
-        self._mlp = Mlp.from_cppn(cppn, cfg, self._coords, self._device)
+        self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
         i = self._transform_img(img)
