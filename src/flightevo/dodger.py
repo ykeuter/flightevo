@@ -80,10 +80,10 @@ class Dodger:
         # inputs = []
         # z = 0
         state = [
-            (0, r * 2, ),  # up
-            (r * 2, 0, ),  # right
-            (0, -r * 2, ),  # down
-            (-r * 2, 0, ),  # left
+            (0, r + 1, ),  # up
+            (r + 1, 0, ),  # right
+            (0, -r - 1, ),  # down
+            (-r - 1, 0, ),  # left
         ]
         img = self._get_grid(
             self._resolution_width, self._resolution_height, r * 2, r * 2)
@@ -111,24 +111,25 @@ class Dodger:
         # z = 5
         outputs = [
             (0, 0, ),  # center
-            (0, r, ),  # up
-            (r, r, ),  # upper right
-            (r, 0, ),  # right
-            (r, -r, ),  # lower right
-            (0, -r, ),  # down
-            (-r, -r, ),  # lower left
-            (-r, 0, ),  # left
-            (-r, r, ),  # upper left
+            (0, r / 2, ),  # up
+            (r / 2, r / 2, ),  # upper right
+            (r / 2, 0, ),  # right
+            (r / 2, -r / 2, ),  # lower right
+            (0, -r / 2, ),  # down
+            (-r / 2, -r / 2, ),  # lower left
+            (-r / 2, 0, ),  # left
+            (-r / 2, r / 2, ),  # upper left
         ]
 
         # return [inputs, hidden1, hidden2, outputs]
         return [state + img, outputs]
 
-    def _get_grid(self, ncols, nrows, width, height):
+    @staticmethod
+    def _get_grid(ncols, nrows, width, height):
         return [
             (
-                c * width / ncols - width / 2,
-                -r * height / nrows + height / 2
+                (c / ncols + 1 / ncols / 2 - .5) * width,
+                (r / nrows + 1 / nrows / 2 - .5) * -height,
             )
             for r in range(nrows)
             for c in range(ncols)
