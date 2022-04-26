@@ -9,11 +9,12 @@ from std_msgs.msg import (
 
 
 class Mlp2D:
-    def __init__(self, weights, biases, device):
+    def __init__(self, weights, biases,
+                 device="cuda", activation=sigmoid_activation):
         self.device = device
         self.weights = weights
         self.biases = biases
-        self.activation = sigmoid_activation
+        self.activation = activation
 
     def activate(self, inputs):
         with torch.no_grad():
@@ -77,7 +78,7 @@ class Mlp2D:
         ]
         w, b = Mlp2D._apply_cppn(nodes[0], nodes[1], coords, device)
         torch.cuda.empty_cache()
-        return Mlp2D(w, b, device)
+        return Mlp2D(w, b, device, identity_activation)
 
     @staticmethod
     def _get_coord_inputs(in_coords, out_coords):
