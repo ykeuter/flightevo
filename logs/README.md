@@ -25,3 +25,11 @@ no img. just hovering.
 # odw0knkr
 
 simplify. only img. linvel
+
+# h88rdemm
+
+with state. using only gauss. easy solution
+
+# bwifcfhe
+
+medium level. good results!
