@@ -7,6 +7,7 @@ import random
 import string
 import shutil
 import pickle
+import roslaunch
 from threading import Lock
 from pathlib import Path
 from dodgeros_msgs.msg import QuadState, Command
@@ -18,8 +19,10 @@ from ruamel.yaml import YAML
 from geometry_msgs.msg import TwistStamped
 from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
+from neat.function_reporter import FunctionReporter
+from itertools import repeat, cycle
 
-from flightevo.utils import replace_config, reset_stagnation, repeat_yield
+from flightevo.utils import replace_config, reset_stagnation
 from flightevo.dodger import Dodger, AgileQuadState
 
 
@@ -35,7 +38,7 @@ class DodgeTrainer:
         if winner_pickle:
             with open(winner_pickle, "rb") as f:
                 w = pickle.load(f)
-            self._generator = repeat_yield(w)
+            self._generator = repeat(w)
         else:
             Path(log_dir).mkdir()
             shutil.copy2(env_cfg, log_dir)
@@ -53,12 +56,17 @@ class DodgeTrainer:
             pop.add_reporter(neat.StdOutReporter(True))
             pop.add_reporter(CsvReporter(Path(log_dir)))
             pop.add_reporter(WinnerReporter(Path(log_dir)))
+            pop.add_reporter(FunctionReporter(self._level_up))
             self._generator = iter(pop)
         self._current_genome = None
         with open(env_cfg) as f:
             config = YAML().load(f)
-        self._dodger = Dodger(config["inputs"]["resolution_width"],
-                              config["inputs"]["resolution_height"])
+        self._dodger = Dodger(
+            resolution_widht=config["dodger"]["resolution_width"],
+            resolution_height=config["dodger"]["resolution_height"],
+            speed_x=config["dodger"]["speed_x"],
+            speed_yz=config["dodger"]["speed_yz"],
+        )
         self._xmax = int(config['environment']['target'])
         self._timeout = config['environment']['timeout']
         self._bounding_box = np.reshape(np.array(
@@ -69,8 +77,13 @@ class DodgeTrainer:
         self._lock = Lock()
         self._crashed = False
         self._active = False
+        self._rluuid = None
+        self._roslaunch = None
+        self._levels = cycle(range(100))
 
     def run(self):
+        self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        roslaunch.configure_logging(self._rl_uuid)
         rospy.Subscriber(
             "/kingfisher/dodgeros_pilot/state", QuadState, self.state_callback,
             queue_size=1, tcp_nodelay=True)
@@ -93,6 +106,15 @@ class DodgeTrainer:
             "/kingfisher/dodgeros_pilot/start", Empty, queue_size=1)
         self._reset()
         rospy.spin()
+
+    def _level_up(self):
+        self._roslaunch.shutdown()
+        fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
+        args = ["env:=environment_{}".format(next(self._levels))]
+        self._roslaunch = roslaunch.parent.ROSLaunchParent(
+            self._rluuid, [(fn, args)])
+        self._roslaunch.start()
+        time.sleep(10.)
 
     def _reset(self):
         self._active = False

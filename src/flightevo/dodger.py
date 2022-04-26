@@ -13,9 +13,7 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
-    MAX_SPEED = 1.0
-
-    def __init__(self, resolution_width, resolution_height):
+    def __init__(self, resolution_width, resolution_height, speed_x, speed_yz):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -24,6 +22,8 @@ class Dodger:
         self._img_pub = rospy.Publisher(
             "/kingfisher/dodger/depth", Image, queue_size=1)
         self._cv_bridge = CvBridge()
+        self._speed_x = speed_x
+        self._speed_yz = speed_yz
 
     def load(self, cppn, cfg):
         del self._mlp
@@ -43,34 +43,34 @@ class Dodger:
         a = self._mlp.activate(torch.cat((s, i),))
 
         index = a.argmax().item()
-        if index == 0:  # up
-            vz = self.MAX_SPEED
-            vy = 0
-        elif index == 1:  # upper right
-            vz = self.MAX_SPEED
-            vy = -self.MAX_SPEED
-        elif index == 2:  # right
-            vz = 0
-            vy = -self.MAX_SPEED
-        elif index == 3:  # lower right
-            vz = -self.MAX_SPEED
-            vy = -self.MAX_SPEED
-        elif index == 4:  # down
-            vz = -self.MAX_SPEED
-            vy = 0
-        elif index == 5:  # lower left
-            vz = -self.MAX_SPEED
-            vy = self.MAX_SPEED
-        elif index == 6:  # left
-            vz = 0
-            vy = self.MAX_SPEED
-        elif index == 7:  # upper left
-            vz = self.MAX_SPEED
-            vy = self.MAX_SPEED
-        elif index == 8:  # center
+        if index == 0:  # center
             vz = 0
             vy = 0
-        vx = self.MAX_SPEED
+        elif index == 1:  # up
+            vz = self._speed_yz
+            vy = 0
+        elif index == 2:  # upper right
+            vz = self._speed_yz
+            vy = -self._speed_yz
+        elif index == 3:  # right
+            vz = 0
+            vy = -self._speed_yz
+        elif index == 4:  # lower right
+            vz = -self._speed_yz
+            vy = -self._speed_yz
+        elif index == 5:  # down
+            vz = -self._speed_yz
+            vy = 0
+        elif index == 6:  # lower left
+            vz = -self._speed_yz
+            vy = self._speed_yz
+        elif index == 7:  # left
+            vz = 0
+            vy = self._speed_yz
+        elif index == 8:  # upper left
+            vz = self._speed_yz
+            vy = self._speed_yz
+        vx = self._speed_x
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=[vx, vy, vz])
 
@@ -110,6 +110,7 @@ class Dodger:
 
         # z = 5
         outputs = [
+            (0, 0, ),  # center
             (0, r, ),  # up
             (r, r, ),  # upper right
             (r, 0, ),  # right
@@ -118,7 +119,6 @@ class Dodger:
             (-r, -r, ),  # lower left
             (-r, 0, ),  # left
             (-r, r, ),  # upper left
-            (0, 0, ),  # center
         ]
 
         # return [inputs, hidden1, hidden2, outputs]
