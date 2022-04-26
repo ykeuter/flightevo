@@ -66,6 +66,7 @@ class DodgeTrainer:
             resolution_height=config["dodger"]["resolution_height"],
             speed_x=config["dodger"]["speed_x"],
             speed_yz=config["dodger"]["speed_yz"],
+            bounds=config['environment']['world_box'][2:],
         )
         self._xmax = int(config['environment']['target'])
         self._timeout = config['environment']['timeout']

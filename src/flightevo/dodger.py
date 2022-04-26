@@ -13,7 +13,8 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
-    def __init__(self, resolution_width, resolution_height, speed_x, speed_yz):
+    def __init__(self, resolution_width, resolution_height, speed_x, speed_yz,
+                 bounds):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -24,6 +25,7 @@ class Dodger:
         self._cv_bridge = CvBridge()
         self._speed_x = speed_x
         self._speed_yz = speed_yz
+        self._bounds = bounds  # min_y, max_y, min_z, max_z
 
     def load(self, cppn, cfg):
         del self._mlp
@@ -71,14 +73,18 @@ class Dodger:
 
     def _transform_state(self, state):
         s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
-        if state.pos[1] > 0:  # y
-            s[3] = state.pos[1] / 10
+        len_y = (self._bounds[1] - self._bounds[0]) / 2
+        mid_y = (self._bounds[1] + self._bounds[0]) / 2
+        len_z = (self._bounds[3] - self._bounds[2]) / 2
+        mid_z = (self._bounds[3] + self._bounds[2]) / 2
+        if state.pos[1] > mid_y:  # y
+            s[3] = (state.pos[1] - mid_y) / len_y
         else:
-            s[1] = -state.pos[1] / 10
-        if state.pos[2] > 5:  # z
-            s[0] = (state.pos[2] - 5) / 5
+            s[1] = (mid_y - state.pos[1]) / len_y
+        if state.pos[2] > mid_z:  # z
+            s[0] = (state.pos[2] - mid_z) / len_z
         else:
-            s[2] = (5 - state.pos[2]) / 5
+            s[2] = (mid_z - state.pos[2]) / len_z
         return s
 
     def _get_coords(self):
@@ -154,4 +160,5 @@ class Dodger:
         # print(r, c)
         # cv2.imshow("depth resized", new_img.numpy())
         # cv2.waitKey()
+        new_img /= (self._resolution_width * self._resolution_height)
         return new_img.view(-1)
