@@ -62,7 +62,7 @@ class DodgeTrainer:
         with open(env_cfg) as f:
             config = YAML().load(f)
         self._dodger = Dodger(
-            resolution_widht=config["dodger"]["resolution_width"],
+            resolution_width=config["dodger"]["resolution_width"],
             resolution_height=config["dodger"]["resolution_height"],
             speed_x=config["dodger"]["speed_x"],
             speed_yz=config["dodger"]["speed_yz"],
@@ -83,7 +83,8 @@ class DodgeTrainer:
 
     def run(self):
         self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        roslaunch.configure_logging(self._rl_uuid)
+        roslaunch.configure_logging(self._rluuid)
+        self._launch()
         rospy.Subscriber(
             "/kingfisher/dodgeros_pilot/state", QuadState, self.state_callback,
             queue_size=1, tcp_nodelay=True)
@@ -109,6 +110,9 @@ class DodgeTrainer:
 
     def _level_up(self):
         self._roslaunch.shutdown()
+        self._launch()
+
+    def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
         args = ["env:=environment_{}".format(next(self._levels))]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
