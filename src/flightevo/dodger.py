@@ -35,7 +35,7 @@ class Dodger:
         s = self._transform_state(state)
         i = self._transform_img(img)
         a = self._mlp.activate(torch.cat((s, i),))
-        v = self._transfrom_activations(a)
+        v = self._transform_activations(a)
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
 
