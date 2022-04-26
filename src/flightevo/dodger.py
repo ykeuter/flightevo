@@ -30,18 +30,14 @@ class Dodger:
         self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
-        s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
-        if state.pos[1] > 0:  # y
-            s[3] = state.pos[1] / 10
-        else:
-            s[1] = -state.pos[1] / 10
-        if state.pos[2] > 5:  # z
-            s[0] = (state.pos[2] - 5) / 5
-        else:
-            s[2] = (5 - state.pos[2]) / 5
+        s = self._transform_state(state)
         i = self._transform_img(img)
         a = self._mlp.activate(torch.cat((s, i),))
+        v = self._transfrom_activations(a)
+        return AgileCommand(
+            t=state.t, mode=2, yawrate=0, velocity=v)
 
+    def _transform_activations(self, a):
         index = a.argmax().item()
         if index == 0:  # center
             vz = 0
@@ -71,8 +67,19 @@ class Dodger:
             vz = self._speed_yz
             vy = self._speed_yz
         vx = self._speed_x
-        return AgileCommand(
-            t=state.t, mode=2, yawrate=0, velocity=[vx, vy, vz])
+        return [vx, vy, vz]
+
+    def _transform_state(self, state):
+        s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
+        if state.pos[1] > 0:  # y
+            s[3] = state.pos[1] / 10
+        else:
+            s[1] = -state.pos[1] / 10
+        if state.pos[2] > 5:  # z
+            s[0] = (state.pos[2] - 5) / 5
+        else:
+            s[2] = (5 - state.pos[2]) / 5
+        return s
 
     def _get_coords(self):
         r = 5
