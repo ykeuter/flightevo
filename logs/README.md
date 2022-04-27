@@ -33,3 +33,11 @@ with state. using only gauss. easy solution
 # bwifcfhe
 
 medium level. good results!
+
+# pqz794eh
+
+rotating levels. too many species
+
+# sbkl4g2l
+
+found trivial solution in level 3
