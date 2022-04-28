@@ -80,7 +80,12 @@ class DodgeTrainer:
         self._active = False
         self._rluuid = None
         self._roslaunch = None
-        self._levels = cycle(range(100))
+        if "env_folder" in config["environment"]:
+            self._levels = repeat(config["environment"]["env_folder"])
+        else:
+            self._levels = (
+                "environment_{}".format(i) for i in cycle(range(100))
+            )
 
     def run(self):
         self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
@@ -115,7 +120,7 @@ class DodgeTrainer:
 
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
-        args = ["env:=environment_{}".format(next(self._levels))]
+        args = ["env:={}".format(next(self._levels))]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
         self._roslaunch.start()

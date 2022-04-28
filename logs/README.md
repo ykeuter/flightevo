@@ -41,3 +41,11 @@ rotating levels. too many species
 # sbkl4g2l
 
 found trivial solution in level 3
+
+# lp2zcw3z
+
+random start. still found trivial solution?
+
+# j4r2liqx
+
+extended run. still trivial
