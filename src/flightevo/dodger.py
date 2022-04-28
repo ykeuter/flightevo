@@ -32,9 +32,9 @@ class Dodger:
         self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
-        s = self._transform_state(state)
-        i = self._transform_img(img)
-        a = self._mlp.activate(torch.cat((s, i),))
+        # s = self._transform_state(state)
+        i = self._transform_img(img, state)
+        a = self._mlp.activate(i)
         v = self._transform_activations(a)
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
@@ -148,17 +148,35 @@ class Dodger:
             for c in range(ncols)
         ]
 
-    def _transform_img(self, img):
+    def _transform_img(self, img, state):
         r, c = img.shape
         k0 = int(r / self._resolution_height)
         k1 = int(c / self._resolution_width)
         # copy needed due to non-writeable nparray
         new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
+
+        len_y = (self._bounds[1] - self._bounds[0]) / 2
+        mid_y = (self._bounds[1] + self._bounds[0]) / 2
+        len_z = (self._bounds[3] - self._bounds[2]) / 2
+        mid_z = (self._bounds[3] + self._bounds[2]) / 2
+        if state.pos[1] > mid_y:  # left
+            new_img[:, :(self._resolution_width / 2)].clamp_(
+                (state.pos[1] - mid_y) / len_y)
+        else:  # right
+            new_img[:, (self._resolution_width / 2):].clamp_(
+                (mid_y - state.pos[1]) / len_y)
+        if state.pos[2] > mid_z:  # up
+            new_img[:(self._resolution_height / 2), :].clamp_(
+                (state.pos[2] - mid_z) / len_z)
+        else:  # down
+            new_img[(self._resolution_height / 2):, :].clamp_(
+                (mid_z - state.pos[2]) / len_z)
+
         msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
         self._img_pub.publish(msg)
         # print(r, c)
         # cv2.imshow("depth resized", new_img.numpy())
         # cv2.waitKey()
-        new_img /= (self._resolution_width * self._resolution_height)
+        # new_img /= (self._resolution_width * self._resolution_height)
         return new_img.view(-1)
