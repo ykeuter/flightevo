@@ -70,6 +70,7 @@ class Dodger:
             vy = self._speed_yz
         vx = self._speed_x
         return [vx, vy, vz]
+        # return [1, 0, 0]
 
     def _transform_state(self, state):
         s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
@@ -93,10 +94,10 @@ class Dodger:
         # inputs = []
         # z = 0
         state = [
-            (0, r + 1, ),  # up
-            (r + 1, 0, ),  # right
-            (0, -r - 1, ),  # down
-            (-r - 1, 0, ),  # left
+            # (0, r + 1, ),  # up
+            # (r + 1, 0, ),  # right
+            # (0, -r - 1, ),  # down
+            # (-r - 1, 0, ),  # left
         ]
         img = self._get_grid(
             self._resolution_width, self._resolution_height, r * 2, r * 2)
@@ -161,16 +162,16 @@ class Dodger:
         len_z = (self._bounds[3] - self._bounds[2]) / 2
         mid_z = (self._bounds[3] + self._bounds[2]) / 2
         if state.pos[1] > mid_y:  # left
-            new_img[:, :(self._resolution_width / 2)].clamp_(
+            new_img[:, :int(self._resolution_width / 2)].clamp_(
                 (state.pos[1] - mid_y) / len_y)
         else:  # right
-            new_img[:, (self._resolution_width / 2):].clamp_(
+            new_img[:, int(self._resolution_width / 2):].clamp_(
                 (mid_y - state.pos[1]) / len_y)
         if state.pos[2] > mid_z:  # up
-            new_img[:(self._resolution_height / 2), :].clamp_(
+            new_img[:int(self._resolution_height / 2), :].clamp_(
                 (state.pos[2] - mid_z) / len_z)
         else:  # down
-            new_img[(self._resolution_height / 2):, :].clamp_(
+            new_img[int(self._resolution_height / 2):, :].clamp_(
                 (mid_z - state.pos[2]) / len_z)
 
         msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
