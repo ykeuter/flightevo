@@ -70,7 +70,6 @@ class Dodger:
             vy = self._speed_yz
         vx = self._speed_x
         return [vx, vy, vz]
-        # return [1, 0, 0]
 
     def _transform_state(self, state):
         s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
