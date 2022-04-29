@@ -68,8 +68,7 @@ class Mlp2D:
             genome,
             config,
             ["x_in", "y_in", "x_out", "y_out", ],
-            # ["weight", "bias"],
-            ["weight", ],
+            ["weight", "bias"],
             output_activation=identity_activation,
             output_aggregation=sum_aggregation,
         )
@@ -77,10 +76,9 @@ class Mlp2D:
             torch.tensor(c, dtype=torch.float32, device=device)
             for c in coords
         ]
-        # w, b = Mlp2D._apply_cppn(nodes[0], nodes[1], coords, device)
-        w, b = Mlp2D._apply_cppn(nodes[0], None, coords, device)
+        w, b = Mlp2D._apply_cppn(nodes[0], nodes[1], coords, device)
         torch.cuda.empty_cache()
-        return Mlp2D(w, b, device, identity_activation)
+        return Mlp2D(w, b, device, sigmoid_activation)
 
     @staticmethod
     def _get_coord_inputs(in_coords, out_coords):

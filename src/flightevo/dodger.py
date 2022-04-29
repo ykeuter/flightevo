@@ -32,47 +32,58 @@ class Dodger:
         self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
-        # s = self._transform_state(state)
-        i = self._transform_img(img, state)
-        a = self._mlp.activate(i)
+        s = self._transform_state(state)
+        i = self._transform_img(img)
+        a = self._mlp.activate(torch.cat((s, i),))
         v = self._transform_activations(a)
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
 
     def _transform_activations(self, a):
         index = a.argmax().item()
-        if index == 0:  # center
-            vz = 0
-            vy = 0
-        elif index == 1:  # up
+        if index == 0:  # up
             vz = self._speed_yz
             vy = 0
-        elif index == 2:  # upper right
+        elif index == 1:  # upper right
             vz = self._speed_yz
             vy = -self._speed_yz
-        elif index == 3:  # right
+        elif index == 2:  # right
             vz = 0
             vy = -self._speed_yz
-        elif index == 4:  # lower right
+        elif index == 3:  # lower right
             vz = -self._speed_yz
             vy = -self._speed_yz
-        elif index == 5:  # down
+        elif index == 4:  # down
             vz = -self._speed_yz
             vy = 0
-        elif index == 6:  # lower left
+        elif index == 5:  # lower left
             vz = -self._speed_yz
             vy = self._speed_yz
-        elif index == 7:  # left
+        elif index == 6:  # left
             vz = 0
             vy = self._speed_yz
-        elif index == 8:  # upper left
+        elif index == 7:  # upper left
             vz = self._speed_yz
             vy = self._speed_yz
+        elif index == 8:  # center
+            vz = 0
+            vy = 0
         vx = self._speed_x
         return [vx, vy, vz]
 
     def _transform_state(self, state):
         s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
+
+        if state.pos[1] > 0:  # y
+            s[3] = state.pos[1] / 10
+        else:
+            s[1] = -state.pos[1] / 10
+        if state.pos[2] > 5:  # z
+            s[0] = (state.pos[2] - 5) / 5
+        else:
+            s[2] = (5 - state.pos[2]) / 5
+        return s
+
         len_y = (self._bounds[1] - self._bounds[0]) / 2
         mid_y = (self._bounds[1] + self._bounds[0]) / 2
         len_z = (self._bounds[3] - self._bounds[2]) / 2
@@ -93,10 +104,10 @@ class Dodger:
         # inputs = []
         # z = 0
         state = [
-            # (0, r + 1, ),  # up
-            # (r + 1, 0, ),  # right
-            # (0, -r - 1, ),  # down
-            # (-r - 1, 0, ),  # left
+            (0, r * 2, ),  # up
+            (r * 2, 0, ),  # right
+            (0, -r * 2, ),  # down
+            (-r * 2, 0, ),  # left
         ]
         img = self._get_grid(
             self._resolution_width, self._resolution_height, r * 2, r * 2)
@@ -123,15 +134,15 @@ class Dodger:
 
         # z = 5
         outputs = [
+            (0, r, ),  # up
+            (r, r, ),  # upper right
+            (r, 0, ),  # right
+            (r, -r, ),  # lower right
+            (0, -r, ),  # down
+            (-r, -r, ),  # lower left
+            (-r, 0, ),  # left
+            (-r, r, ),  # upper left
             (0, 0, ),  # center
-            (0, r / 2, ),  # up
-            (r / 2, r / 2, ),  # upper right
-            (r / 2, 0, ),  # right
-            (r / 2, -r / 2, ),  # lower right
-            (0, -r / 2, ),  # down
-            (-r / 2, -r / 2, ),  # lower left
-            (-r / 2, 0, ),  # left
-            (-r / 2, r / 2, ),  # upper left
         ]
 
         # return [inputs, hidden1, hidden2, outputs]
@@ -141,14 +152,16 @@ class Dodger:
     def _get_grid(ncols, nrows, width, height):
         return [
             (
-                (c / ncols + 1 / ncols / 2 - .5) * width,
-                (r / nrows + 1 / nrows / 2 - .5) * -height,
+                # (c / ncols + 1 / ncols / 2 - .5) * width,
+                # (r / nrows + 1 / nrows / 2 - .5) * -height,
+                c * width / ncols - width / 2,
+                -r * height / nrows + height / 2,
             )
             for r in range(nrows)
             for c in range(ncols)
         ]
 
-    def _transform_img(self, img, state):
+    def _transform_img(self, img):
         r, c = img.shape
         k0 = int(r / self._resolution_height)
         k1 = int(c / self._resolution_width)
@@ -156,22 +169,22 @@ class Dodger:
         new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
 
-        len_y = (self._bounds[1] - self._bounds[0]) / 2
-        mid_y = (self._bounds[1] + self._bounds[0]) / 2
-        len_z = (self._bounds[3] - self._bounds[2]) / 2
-        mid_z = (self._bounds[3] + self._bounds[2]) / 2
-        if state.pos[1] > mid_y:  # left
-            new_img[:, :int(self._resolution_width / 2)].clamp_(
-                (state.pos[1] - mid_y) / len_y)
-        else:  # right
-            new_img[:, int(self._resolution_width / 2):].clamp_(
-                (mid_y - state.pos[1]) / len_y)
-        if state.pos[2] > mid_z:  # up
-            new_img[:int(self._resolution_height / 2), :].clamp_(
-                (state.pos[2] - mid_z) / len_z)
-        else:  # down
-            new_img[int(self._resolution_height / 2):, :].clamp_(
-                (mid_z - state.pos[2]) / len_z)
+        # len_y = (self._bounds[1] - self._bounds[0]) / 2
+        # mid_y = (self._bounds[1] + self._bounds[0]) / 2
+        # len_z = (self._bounds[3] - self._bounds[2]) / 2
+        # mid_z = (self._bounds[3] + self._bounds[2]) / 2
+        # if state.pos[1] > mid_y:  # left
+        #     new_img[:, :int(self._resolution_width / 2)].clamp_(
+        #         (state.pos[1] - mid_y) / len_y)
+        # else:  # right
+        #     new_img[:, int(self._resolution_width / 2):].clamp_(
+        #         (mid_y - state.pos[1]) / len_y)
+        # if state.pos[2] > mid_z:  # up
+        #     new_img[:int(self._resolution_height / 2), :].clamp_(
+        #         (state.pos[2] - mid_z) / len_z)
+        # else:  # down
+        #     new_img[int(self._resolution_height / 2):, :].clamp_(
+        #         (mid_z - state.pos[2]) / len_z)
 
         msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
         self._img_pub.publish(msg)
