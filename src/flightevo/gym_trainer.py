@@ -9,6 +9,7 @@ import shutil
 from ruamel.yaml import YAML, RoundTripDumper, dump
 from flightgym import VisionEnv_v1
 import torch
+import matplotlib.pyplot as plt
 
 from flightevo.mlp import Mlp
 from neat.csv_reporter import CsvReporter
@@ -57,8 +58,8 @@ class VisionTrainer:
         self._env = VisionEnv_v1(dump(config, Dumper=RoundTripDumper), False)
         self._img_width = self._env.getImgWidth()
         self._img_height = self._env.getImgHeight()
-        self._resolution_width = config["inputs"]["resolution_width"]
-        self._resolution_height = config["inputs"]["resolution_height"]
+        self._resolution_width = config["dodger"]["resolution_width"]
+        self._resolution_height = config["dodger"]["resolution_height"]
         self._sim_dt = config["simulation"]["sim_dt"]
 
         self._device = "cuda"
@@ -114,6 +115,8 @@ class VisionTrainer:
         self._frame_id = 0
 
     def _transform_img(self, img):
+        plt.imshow(img.reshape(self._img_height, self._img_width))
+        plt.show()
         if self._resolution_height == 0 or self._resolution_width == 0:
             return np.array([])
         scaled_img = resize(
