@@ -24,12 +24,13 @@ from itertools import repeat, cycle
 
 from flightevo.utils import replace_config, reset_stagnation
 from flightevo.dodger import Dodger, AgileQuadState
+from flightevo.dodge_genome import DodgeGenome
 
 
 class DodgeTrainer:
     def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
         self._neat_config = neat.Config(
-            neat.DefaultGenome,
+            DodgeGenome,
             neat.DefaultReproduction,
             neat.DefaultSpeciesSet,
             neat.DefaultStagnation,
