@@ -115,7 +115,8 @@ class VisionTrainer:
         self._frame_id = 0
 
     def _transform_img(self, img):
-        plt.imshow(img.reshape(self._img_height, self._img_width))
+        plt.imshow(img.reshape(self._img_height, self._img_width),
+                   vmin=0, vmax=1)
         plt.show()
         if self._resolution_height == 0 or self._resolution_width == 0:
             return np.array([])
