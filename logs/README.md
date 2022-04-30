@@ -49,3 +49,7 @@ random start. still found trivial solution?
 # j4r2liqx
 
 extended run. still trivial
+
+# 3x8rr26g
+
+back in business.
