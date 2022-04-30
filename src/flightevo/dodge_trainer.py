@@ -165,7 +165,8 @@ class DodgeTrainer:
                         msg.pose.position.y,
                         msg.pose.position.z])
         if (
-            (pos < self._bounding_box[:, 0]) | (pos > self._bounding_box[:, 1])
+            (pos <= self._bounding_box[:, 0]) |
+            (pos >= self._bounding_box[:, 1])
         ).any():
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
