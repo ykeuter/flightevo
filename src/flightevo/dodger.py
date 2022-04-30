@@ -74,16 +74,6 @@ class Dodger:
     def _transform_state(self, state):
         s = torch.zeros(4, dtype=torch.float32)  # up, right, down, left
 
-        if state.pos[1] > 0:  # y
-            s[3] = state.pos[1] / 10
-        else:
-            s[1] = -state.pos[1] / 10
-        if state.pos[2] > 5:  # z
-            s[0] = (state.pos[2] - 5) / 5
-        else:
-            s[2] = (5 - state.pos[2]) / 5
-        return s
-
         len_y = (self._bounds[1] - self._bounds[0]) / 2
         mid_y = (self._bounds[1] + self._bounds[0]) / 2
         len_z = (self._bounds[3] - self._bounds[2]) / 2
