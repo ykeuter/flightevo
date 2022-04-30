@@ -21,6 +21,7 @@ from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
 from neat.function_reporter import FunctionReporter
 from itertools import repeat, cycle
+from threading import Thread
 
 from flightevo.utils import replace_config, reset_stagnation
 from flightevo.dodger import Dodger, AgileQuadState
@@ -129,6 +130,9 @@ class DodgeTrainer:
 
     def _reset(self):
         self._active = False
+        Thread(target=self._reset_and_wait).start()
+
+    def _reset_and_wait(self):
         try:
             self._current_genome = next(self._generator)
         except (StopIteration, neat.CompleteExtinctionException):
@@ -157,10 +161,12 @@ class DodgeTrainer:
         if not self._active:
             return
         if self._crashed:
+            print("crashed")
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
+            print("time's up")
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -169,6 +175,7 @@ class DodgeTrainer:
             (pos <= self._bounding_box[:, 0]) |
             (pos >= self._bounding_box[:, 1])
         ).any():
+            print("out of bounds")
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
         self._state = AgileQuadState(t=msg.t, pos=pos)
