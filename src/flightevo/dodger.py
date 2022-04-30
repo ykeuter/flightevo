@@ -152,10 +152,10 @@ class Dodger:
     def _get_grid(ncols, nrows, width, height):
         return [
             (
-                # (c / ncols + 1 / ncols / 2 - .5) * width,
-                # (r / nrows + 1 / nrows / 2 - .5) * -height,
-                c * width / ncols - width / 2,
-                -r * height / nrows + height / 2,
+                (c / ncols + 1 / ncols / 2 - .5) * width,
+                (r / nrows + 1 / nrows / 2 - .5) * -height,
+                # c * width / ncols - width / 2,
+                # -r * height / nrows + height / 2,
             )
             for r in range(nrows)
             for c in range(ncols)
