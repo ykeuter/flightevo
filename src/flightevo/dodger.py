@@ -44,28 +44,28 @@ class Dodger:
         if index == 0:  # up
             vz = self._speed_yz
             vy = 0
-        elif index == 1:  # upper right
-            vz = self._speed_yz
-            vy = -self._speed_yz
-        elif index == 2:  # right
+        # elif index == 1:  # upper right
+        #     vz = self._speed_yz
+        #     vy = -self._speed_yz
+        elif index == 1:  # right
             vz = 0
             vy = -self._speed_yz
-        elif index == 3:  # lower right
-            vz = -self._speed_yz
-            vy = -self._speed_yz
-        elif index == 4:  # down
+        # elif index == 3:  # lower right
+        #     vz = -self._speed_yz
+        #     vy = -self._speed_yz
+        elif index == 2:  # down
             vz = -self._speed_yz
             vy = 0
-        elif index == 5:  # lower left
-            vz = -self._speed_yz
-            vy = self._speed_yz
-        elif index == 6:  # left
+        # elif index == 5:  # lower left
+        #     vz = -self._speed_yz
+        #     vy = self._speed_yz
+        elif index == 3:  # left
             vz = 0
             vy = self._speed_yz
-        elif index == 7:  # upper left
-            vz = self._speed_yz
-            vy = self._speed_yz
-        elif index == 8:  # center
+        # elif index == 7:  # upper left
+        #     vz = self._speed_yz
+        #     vy = self._speed_yz
+        elif index == 4:  # center
             vz = 0
             vy = 0
         vx = self._speed_x
@@ -125,13 +125,13 @@ class Dodger:
         # z = 5
         outputs = [
             (0, r, ),  # up
-            (r, r, ),  # upper right
+            # (r, r, ),  # upper right
             (r, 0, ),  # right
-            (r, -r, ),  # lower right
+            # (r, -r, ),  # lower right
             (0, -r, ),  # down
-            (-r, -r, ),  # lower left
+            # (-r, -r, ),  # lower left
             (-r, 0, ),  # left
-            (-r, r, ),  # upper left
+            # (-r, r, ),  # upper left
             (0, 0, ),  # center
         ]
 
