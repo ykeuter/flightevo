@@ -18,5 +18,5 @@ class Cppn:
         d2 = x_in * x_in + y_in * y_in
         idx = ((x_out == 0) & (y_out == 0))
         for n in self._center_nodes:
-            output[idx] += torch.exp(-d2[idx] / n.scale / n.scale) * n.weight
+            output += torch.exp(-d2 / n.scale / n.scale) * n.weight * idx
         return output
