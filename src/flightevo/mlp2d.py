@@ -6,6 +6,7 @@ from pytorch_neat.activations import sigmoid_activation, identity_activation
 from pytorch_neat.aggregations import sum_aggregation
 from std_msgs.msg import (
     Float32MultiArray, MultiArrayDimension, MultiArrayLayout)
+from flightevo.cppn import Cppn
 
 
 class Mlp2D:
@@ -64,20 +65,22 @@ class Mlp2D:
         coords,
         device="cpu",
     ):
-        nodes = create_cppn(
-            genome,
-            config,
-            ["x_in", "y_in", "x_out", "y_out", ],
-            # ["weight", "bias"],
-            ["weight", ],
-            output_activation=identity_activation,
-            output_aggregation=sum_aggregation,
-        )
+        # nodes = create_cppn(
+        #     genome,
+        #     config,
+        #     ["x_in", "y_in", "x_out", "y_out", ],
+        #     # ["weight", "bias"],
+        #     ["weight", ],
+        #     output_activation=identity_activation,
+        #     output_aggregation=sum_aggregation,
+        # )
+        # cppn  = nodes[0]
+        cppn = Cppn(genome)
         coords = [
             torch.tensor(c, dtype=torch.float32, device=device)
             for c in coords
         ]
-        w, b = Mlp2D._apply_cppn(nodes[0], None, coords, device)
+        w, b = Mlp2D._apply_cppn(cppn, None, coords, device)
         torch.cuda.empty_cache()
         return Mlp2D(w, b, device, identity_activation)
 
