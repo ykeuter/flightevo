@@ -3,8 +3,8 @@ import torch
 
 class Cppn:
     def __init__(self, genome):
-        self._nodes = genome.nodes
-        self._center_nodes = genome.center_nodes
+        self._nodes = list(genome.nodes.values())
+        self._center_nodes = list(genome.center_nodes.values())
 
     def __call__(self, x_in, y_in, x_out, y_out):
         output = torch.zeros_like(x_in)
