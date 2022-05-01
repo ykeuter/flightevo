@@ -120,8 +120,8 @@ class Genome:
         nodes_self = set(list(self.nodes) + list(self.center_nodes))
         nodes_other = set(list(other.nodes) + list(other.center_nodes))
         inter_ = len(nodes_self & nodes_other)
-        max_ = max(len(nodes_self), len(nodes_other))
-        return 1 - inter_ / max_
+        avg_ = (len(nodes_self) + len(nodes_other)) / 2
+        return 1 - inter_ / avg_
 
     def size(self):
         return len(self.nodes) + len(self.center_nodes)
