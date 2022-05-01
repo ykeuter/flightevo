@@ -76,28 +76,27 @@ class Genome:
 
     def configure_crossover(self, genome1, genome2, config):
         """ Configure a new genome by crossover from two parent genomes. """
-        if genome1.fitness > genome2.fitness:
-            parent1, parent2 = genome1, genome2
-        else:
-            parent1, parent2 = genome2, genome1
+        nodes1 = genome1.nodes
+        nodes2 = genome2.nodes
+        keys1 = set(nodes1)
+        keys2 = set(nodes2)
+        for k in (keys1 & keys2):
+            self.nodes[k] = nodes1[k].crossover(nodes2[k])
+        for k in (keys1 ^ keys2):
+            if random() < .5:
+                n = nodes1.get(k, nodes2.get(k))
+                self.nodes[k] = n.copy()
 
-        # Inherit node genes
-        for key, cg1 in parent1.nodes.items():
-            cg2 = parent2.nodes.get(key)
-            if cg2 is None:
-                # Excess or disjoint gene: copy from the fittest parent.
-                self.nodes[key] = cg1.copy()
-            else:
-                # Homologous gene: combine genes from both parents.
-                self.nodes[key] = cg1.crossover(cg2)
-        for key, cg1 in parent1.center_nodes.items():
-            cg2 = parent2.center_nodes.get(key)
-            if cg2 is None:
-                # Excess or disjoint gene: copy from the fittest parent.
-                self.center_nodes[key] = cg1.copy()
-            else:
-                # Homologous gene: combine genes from both parents.
-                self.center_nodes[key] = cg1.crossover(cg2)
+        nodes1 = genome1.center_nodes
+        nodes2 = genome2.center_nodes
+        keys1 = set(nodes1)
+        keys2 = set(nodes2)
+        for k in (keys1 & keys2):
+            self.center_nodes[k] = nodes1[k].crossover(nodes2[k])
+        for k in (keys1 ^ keys2):
+            if random() < .5:
+                n = nodes1.get(k, nodes2.get(k))
+                self.center_nodes[k] = n.copy()
 
     def mutate(self, config):
         """ Mutates this genome. """
