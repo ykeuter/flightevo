@@ -27,8 +27,7 @@ class Config(DefaultClassConfig):
             ConfigParameter('node_add_prob', float),
             ConfigParameter('node_delete_prob', float),
         ]
-        param_list += list(set(GaussGene.get_config_params()) +
-                           set(ZoomedGaussGene.get_config_params()))
+        param_list += ZoomedGaussGene.get_config_params()
         super().__init__(param_dict, param_list)
 
 
@@ -55,7 +54,7 @@ class Genome:
     def _add_node(self, config):
         node_id = next(config.node_indexer)
         if random() < .5:
-            n = GaussGene(node_id)
+            n = ZoomedGaussGene(node_id)
             self.nodes[node_id] = n
         else:
             n = GaussGene(node_id)
