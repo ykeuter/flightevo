@@ -109,7 +109,7 @@ class Genome:
         if random() < config.node_add_prob:
             self._add_node(config)
         if random() < config.node_delete_prob:
-            self._delete_node(config)
+            self._delete_node()
 
     def distance(self, other, config):
         """
