@@ -25,13 +25,13 @@ from threading import Thread
 
 from flightevo.utils import replace_config, reset_stagnation
 from flightevo.dodger import Dodger, AgileQuadState
-from flightevo.dodge_genome import DodgeGenome
+from flightevo.genome import Genome
 
 
 class DodgeTrainer:
     def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
         self._neat_config = neat.Config(
-            DodgeGenome,
+            Genome,
             neat.DefaultReproduction,
             neat.DefaultSpeciesSet,
             neat.DefaultStagnation,

@@ -4,7 +4,7 @@ from neat.graphs import creates_cycle
 from random import choice
 
 
-class DodgeGenome(DefaultGenome):
+class Genome(DefaultGenome):
     def mutate_add_node(self, config):
         possible_outputs = list(self.nodes)
         out_node = choice(possible_outputs)
