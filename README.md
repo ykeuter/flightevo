@@ -59,3 +59,19 @@ back in business.
 # 1j4b928n
 
 new encoding. great results!
+
+# y64wimk3
+
+flying off. medium 8x8.
+
+# oi6tuyzb
+
+hard 8x8. hard is hard.
+
+# y0vocmnw
+
+16x16. not so much improved. crashed somehow.
+
+# kop3y3ji
+
+16x16 and speedx 2.0, speedyx 1.0.
