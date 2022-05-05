@@ -46,24 +46,32 @@ class Genome:
 
         # (gene_key, gene) pairs for gene sets.
         self.center_nodes = {}
-        self.nodes = {}
+        self.vertical_nodes = {}
+        self.horizontal_nodes = {}
 
         # Fitness results.
         self.fitness = None
 
     def _add_node(self, config):
         node_id = next(config.node_indexer)
-        if random() < .5:
+        r = random()
+        if r < .33:
             n = ZoomedGaussGene(node_id)
-            self.nodes[node_id] = n
+            self.vertical_nodes[node_id] = n
+        elif r < .66:
+            n = ZoomedGaussGene(node_id)
+            self.horizontal_nodes[node_id] = n
         else:
             n = GaussGene(node_id)
             self.center_nodes[node_id] = n
         n.init_attributes(config)
 
     def _delete_node(self):
-        if random() < .5:
-            d = self.nodes
+        r = random()
+        if r < .33:
+            d = self.vertical_nodes
+        elif r < .66:
+            d = self.horizontal_nodes
         else:
             d = self.center_nodes
         if d:
@@ -76,35 +84,26 @@ class Genome:
 
     def configure_crossover(self, genome1, genome2, config):
         """ Configure a new genome by crossover from two parent genomes. """
-        nodes1 = genome1.nodes
-        nodes2 = genome2.nodes
-        keys1 = set(nodes1)
-        keys2 = set(nodes2)
-        for k in (keys1 & keys2):
-            self.nodes[k] = nodes1[k].crossover(nodes2[k])
-        for k in (keys1 ^ keys2):
-            if random() < .5:
-                n = nodes1.get(k, nodes2.get(k))
-                self.nodes[k] = n.copy()
-
-        nodes1 = genome1.center_nodes
-        nodes2 = genome2.center_nodes
-        keys1 = set(nodes1)
-        keys2 = set(nodes2)
-        for k in (keys1 & keys2):
-            self.center_nodes[k] = nodes1[k].crossover(nodes2[k])
-        for k in (keys1 ^ keys2):
-            if random() < .5:
-                n = nodes1.get(k, nodes2.get(k))
-                self.center_nodes[k] = n.copy()
+        for name in ("vertical_nodes", "horizontal_nodes", "center_nodes"):
+            nodes0 = getattr(self, name)
+            nodes1 = getattr(genome1, name)
+            nodes2 = getattr(genome2, name)
+            keys1 = set(nodes1)
+            keys2 = set(nodes2)
+            for k in (keys1 & keys2):
+                nodes0[k] = nodes1[k].crossover(nodes2[k])
+            for k in (keys1 ^ keys2):
+                if random() < .5:
+                    n = nodes1.get(k, nodes2.get(k))
+                    nodes0[k] = n.copy()
 
     def mutate(self, config):
         """ Mutates this genome. """
         # Mutate node genes.
-        for cg in self.nodes.values():
-            cg.mutate(config)
-        for cg in self.center_nodes.values():
-            cg.mutate(config)
+        for ng in (list(self.vertical_nodes.values()) +
+                   list(self.horizontal_nodes.values()) +
+                   list(self.center_nodes.values())):
+            ng.mutate(config)
 
         if random() < config.node_add_prob:
             self._add_node(config)
@@ -116,8 +115,12 @@ class Genome:
         Returns the genetic distance between this genome and the other. This
         distance value is used to compute genome compatibility for speciation.
         """
-        nodes_self = set(list(self.nodes) + list(self.center_nodes))
-        nodes_other = set(list(other.nodes) + list(other.center_nodes))
+        nodes_self = set(list(self.horizontal_nodes) +
+                         list(self.vertical_nodes) +
+                         list(self.center_nodes))
+        nodes_other = set(list(other.horizontal_nodes) +
+                          list(other.vertical_nodes) +
+                          list(other.center_nodes))
         inter_ = len(nodes_self & nodes_other)
         avg_ = (len(nodes_self) + len(nodes_other)) / 2
         if avg_ == 0.:
@@ -125,4 +128,6 @@ class Genome:
         return 1 - inter_ / avg_
 
     def size(self):
-        return len(self.nodes) + len(self.center_nodes)
+        return (len(self.vertical_nodes) +
+                len(self.center_nodes) +
+                len(self.horizontal_nodes))
