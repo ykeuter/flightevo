@@ -14,7 +14,7 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 class Dodger:
     def __init__(self, resolution_width, resolution_height,
-                 speed_x, speed_y, speed_z, bounds):
+                 speed_x, speed_y, speed_z, bounds, gamma):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -26,6 +26,7 @@ class Dodger:
         self._speed_x = speed_x
         self._speed_y = speed_y
         self._speed_z = speed_z
+        self._gamma = gamma
         self._bounds = bounds  # min_y, max_y, min_z, max_z
 
     def load(self, cppn, cfg):
@@ -140,6 +141,7 @@ class Dodger:
         # copy needed due to non-writeable nparray
         new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
+        new_img.pow_(self._gamma)
 
         # len_y = (self._bounds[1] - self._bounds[0]) / 2
         # mid_y = (self._bounds[1] + self._bounds[0]) / 2
