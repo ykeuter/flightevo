@@ -74,4 +74,8 @@ hard 8x8. hard is hard.
 
 # kop3y3ji
 
-16x16 and speedx 2.0, speedyx 1.0.
+16x16 and speedx 2.0, speedyz 1.0.
+
+# 8f86gm34
+
+80x80 at normal speed (2., .5)

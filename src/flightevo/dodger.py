@@ -13,8 +13,8 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
-    def __init__(self, resolution_width, resolution_height, speed_x, speed_yz,
-                 bounds):
+    def __init__(self, resolution_width, resolution_height,
+                 speed_x, speed_y, speed_z, bounds):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -24,7 +24,8 @@ class Dodger:
             "/kingfisher/dodger/depth", Image, queue_size=1)
         self._cv_bridge = CvBridge()
         self._speed_x = speed_x
-        self._speed_yz = speed_yz
+        self._speed_y = speed_y
+        self._speed_z = speed_z
         self._bounds = bounds  # min_y, max_y, min_z, max_z
 
     def load(self, cppn, cfg):
@@ -40,35 +41,16 @@ class Dodger:
             t=state.t, mode=2, yawrate=0, velocity=v)
 
     def _transform_activations(self, a):
-        index = a.argmax().item()
-        if index == 0:  # up
-            vz = self._speed_yz
-            vy = 0
-        # elif index == 1:  # upper right
-        #     vz = self._speed_yz
-        #     vy = -self._speed_yz
-        elif index == 1:  # right
-            vz = 0
-            vy = -self._speed_yz
-        # elif index == 3:  # lower right
-        #     vz = -self._speed_yz
-        #     vy = -self._speed_yz
-        elif index == 2:  # down
-            vz = -self._speed_yz
-            vy = 0
-        # elif index == 5:  # lower left
-        #     vz = -self._speed_yz
-        #     vy = self._speed_yz
-        elif index == 3:  # left
-            vz = 0
-            vy = self._speed_yz
-        # elif index == 7:  # upper left
-        #     vz = self._speed_yz
-        #     vy = self._speed_yz
-        elif index == 4:  # center
-            vz = 0
-            vy = 0
-        vx = self._speed_x
+        # a: up, right, down, left, center
+        if a[0] > a[2]:
+            vz = a[0].item() * self._speed_z
+        else:
+            vz = -a[2].item() * self._speed_z
+        if a[1] > a[3]:
+            vy = -a[1].item() * self._speed_y
+        else:
+            vy = a[3].item() * self._speed_y
+        vx = a[4].item() * self._speed_x
         return [vx, vy, vz]
 
     def _transform_state(self, state):
