@@ -6,8 +6,11 @@ class Cppn:
         self._horizontal_nodes = list(genome.horizontal_nodes.values())
         self._vertical_nodes = list(genome.vertical_nodes.values())
         self._center_nodes = list(genome.center_nodes.values())
+        self._vertical_bias = genome.vertcial_bias
+        self._horizontal_bias = genome.horizontal_bias
+        self._center_bias = genome.center_bias
 
-    def __call__(self, x_in, y_in, x_out, y_out):
+    def get_weights(self, x_in, y_in, x_out, y_out):
         output = torch.zeros_like(x_in)
         idx = ((x_out == 0) & (y_out != 0))
         for n in self._vertical_nodes:
@@ -29,4 +32,14 @@ class Cppn:
         idx = ((x_out == 0) & (y_out == 0))
         for n in self._center_nodes:
             output += torch.exp(-d2 / n.scale / n.scale) * n.weight * idx
+        return output
+
+    def get_biases(self, x_in, y_in, x_out, y_out):
+        output = torch.zeros_like(x_in)
+        idx = ((x_out == 0) & (y_out != 0))
+        output[idx] = self._vertical_bias.bias
+        idx = ((x_out != 0) & (y_out == 0))
+        output[idx] = self._horizontal_bias.bias
+        idx = ((x_out == 0) & (y_out == 0))
+        output[idx] = self._center_bias.bias
         return output

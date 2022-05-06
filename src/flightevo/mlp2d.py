@@ -80,7 +80,8 @@ class Mlp2D:
             torch.tensor(c, dtype=torch.float32, device=device)
             for c in coords
         ]
-        w, b = Mlp2D._apply_cppn(cppn, None, coords, device)
+        w, b = Mlp2D._apply_cppn(
+            cppn.get_weights, cppn.get_biases, coords, device)
         torch.cuda.empty_cache()
         return Mlp2D(w, b, device, sigmoid_activation)
 

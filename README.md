@@ -79,3 +79,10 @@ hard 8x8. hard is hard.
 # 8f86gm34
 
 80x80 at normal speed (2., .5)
+
+# j33gfozh
+variable speed. 4, 2, 2. 16x16
+
+# s7g3zfe5
+
+variable speed. 3, 1, 1. 16x16

@@ -1,3 +1,4 @@
+from tkinter.messagebox import NO
 from neat.config import DefaultClassConfig, ConfigParameter
 from random import random, choice
 from neat.genes import BaseGene
@@ -17,6 +18,12 @@ class GaussGene(BaseGene):
     _gene_attributes = [
         FloatAttribute('scale'),
         FloatAttribute('weight'),
+    ]
+
+
+class BiasGene(BaseGene):
+    _gene_attributes = [
+        FloatAttribute('bias'),
     ]
 
 
@@ -48,6 +55,9 @@ class Genome:
         self.center_nodes = {}
         self.vertical_nodes = {}
         self.horizontal_nodes = {}
+        self.center_bias = None
+        self.vertical_bias = None
+        self.horizontal_bias = None
 
         # Fitness results.
         self.fitness = None
@@ -81,6 +91,12 @@ class Genome:
     def configure_new(self, config):
         """Configure a new genome based on the given configuration."""
         self._add_node(config)
+        self.vertical_bias = BiasGene(-1)
+        self.vertical_bias.init_attributes(config)
+        self.horizontal_bias = BiasGene(-2)
+        self.horizontal_bias.init_attributes(config)
+        self.center_bias = BiasGene(-3)
+        self.center_bias.init_attributes(config)
 
     def configure_crossover(self, genome1, genome2, config):
         """ Configure a new genome by crossover from two parent genomes. """
@@ -96,14 +112,23 @@ class Genome:
                 if random() < .5:
                     n = nodes1.get(k, nodes2.get(k))
                     nodes0[k] = n.copy()
+        for name in ("vertical_bias", "horizontal_bias", "center_bias"):
+            setattr(
+                self,
+                name,
+                getattr(genome1, name).crossover(getattr(genome2, name))
+            )
 
     def mutate(self, config):
         """ Mutates this genome. """
-        # Mutate node genes.
-        for ng in (list(self.vertical_nodes.values()) +
-                   list(self.horizontal_nodes.values()) +
-                   list(self.center_nodes.values())):
-            ng.mutate(config)
+        # Mutate genes.
+        for g in (
+            list(self.vertical_nodes.values()) +
+            list(self.horizontal_nodes.values()) +
+            list(self.center_nodes.values()) +
+            [self.vertical_bias, self.horizontal_bias, self.center_bias]
+        ):
+            g.mutate(config)
 
         if random() < config.node_add_prob:
             self._add_node(config)
