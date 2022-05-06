@@ -34,7 +34,8 @@ class Config(DefaultClassConfig):
             ConfigParameter('node_add_prob', float),
             ConfigParameter('node_delete_prob', float),
         ]
-        param_list += ZoomedGaussGene.get_config_params()
+        param_list += \
+            ZoomedGaussGene.get_config_params() + BiasGene.get_config_params()
         super().__init__(param_dict, param_list)
 
 

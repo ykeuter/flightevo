@@ -6,7 +6,7 @@ class Cppn:
         self._horizontal_nodes = list(genome.horizontal_nodes.values())
         self._vertical_nodes = list(genome.vertical_nodes.values())
         self._center_nodes = list(genome.center_nodes.values())
-        self._vertical_bias = genome.vertcial_bias
+        self._vertical_bias = genome.vertical_bias
         self._horizontal_bias = genome.horizontal_bias
         self._center_bias = genome.center_bias
 
