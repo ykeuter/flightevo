@@ -29,9 +29,9 @@ class Dodger:
         self._gamma = gamma
         self._bounds = bounds  # min_y, max_y, min_z, max_z
 
-    def load(self, cppn, cfg):
+    def load(self, cppn):
         del self._mlp
-        self._mlp = Mlp2D.from_cppn(cppn, cfg, self._coords, self._device)
+        self._mlp = Mlp2D.from_cppn(cppn, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
         s = self._transform_state(state)

@@ -57,9 +57,11 @@ class DodgeTrainer:
             ))
             pop.add_reporter(neat.StdOutReporter(True))
             pop.add_reporter(CsvReporter(Path(log_dir)))
-            pop.add_reporter(WinnerReporter(Path(log_dir)))
-            pop.add_reporter(FunctionReporter(self._level_up))
+            self._winner_reporter = WinnerReporter(Path(log_dir))
+            pop.add_reporter(self._winner_reporter)
+            # pop.add_reporter(FunctionReporter(self._level_up))
             self._generator = iter(pop)
+            self._population = pop
         self._current_genome = None
         with open(env_cfg) as f:
             config = YAML().load(f)
@@ -90,6 +92,7 @@ class DodgeTrainer:
             self._levels = (
                 "environment_{}".format(i) for i in cycle(range(100))
             )
+        self._current_level = None
 
     def run(self):
         self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
@@ -124,7 +127,8 @@ class DodgeTrainer:
 
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
-        args = ["env:={}".format(next(self._levels))]
+        self._current_level = next(self._levels)
+        args = ["env:={}".format(self._current_level)]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
         self._roslaunch.start()
@@ -137,11 +141,16 @@ class DodgeTrainer:
     def _reset_and_wait(self):
         try:
             self._current_genome = next(self._generator)
-        except (StopIteration, neat.CompleteExtinctionException):
+        except neat.CompleteExtinctionException:
             rospy.signal_shutdown("No more genomes!")
+        except StopIteration:
+            self._winner_reporter.reset(self._current_level)
+            self._generator = iter(self._population)
+            self._current_genome = next(self._generator)
+            self._level_up()
         self._current_genome.fitness = 0
         with self._lock:
-            self._dodger.load(self._current_genome, self._neat_config)
+            self._dodger.load(self._current_genome)
         self._start_time = None
         self._state = None
         # make sure dodger has no more cached actions

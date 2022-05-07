@@ -61,7 +61,6 @@ class Mlp2D:
     @staticmethod
     def from_cppn(
         genome,
-        config,
         coords,
         device="cpu",
     ):
