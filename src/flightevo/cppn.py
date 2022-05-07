@@ -12,7 +12,7 @@ class Cppn:
 
     def get_weights(self, x_in, y_in, x_out, y_out):
         output = torch.zeros_like(x_in)
-        for n in self._vertical_nodes:
+        for n in self._nodes:
             zx_out = x_out * n.zoom
             zy_out = y_out * n.zoom
             dx = x_in - zx_out

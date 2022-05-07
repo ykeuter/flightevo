@@ -68,3 +68,6 @@ variable speed. 3, 1, 1. 16x16
 
 # is62va6r
 with bias.
+
+# g0y7lg3h
+constant speed: 2, .5, 1. 16x16. vertical separate.
