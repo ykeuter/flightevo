@@ -55,7 +55,7 @@ class Genome:
         # (gene_key, gene) pairs for gene sets.
         self.center_nodes = {}
         self.vertical_nodes = {}
-        self.horizontal_nodes = {}
+        self.nodes = {}
         self.center_bias = None
         self.vertical_bias = None
         self.horizontal_bias = None
@@ -66,12 +66,12 @@ class Genome:
     def _add_node(self, config):
         node_id = next(config.node_indexer)
         r = random()
-        if r < .33:
+        if r < .5:
             n = ZoomedGaussGene(node_id)
-            self.vertical_nodes[node_id] = n
-        elif r < .66:
-            n = ZoomedGaussGene(node_id)
-            self.horizontal_nodes[node_id] = n
+            self.nodes[node_id] = n
+        # elif r < .66:
+        #     n = ZoomedGaussGene(node_id)
+        #     self.vertical_nodes[node_id] = n
         else:
             n = GaussGene(node_id)
             self.center_nodes[node_id] = n
@@ -79,10 +79,10 @@ class Genome:
 
     def _delete_node(self):
         r = random()
-        if r < .33:
-            d = self.vertical_nodes
-        elif r < .66:
-            d = self.horizontal_nodes
+        if r < .5:
+            d = self.nodes
+        # elif r < .66:
+        #     d = self.vertical_nodes
         else:
             d = self.center_nodes
         if d:
@@ -101,7 +101,7 @@ class Genome:
 
     def configure_crossover(self, genome1, genome2, config):
         """ Configure a new genome by crossover from two parent genomes. """
-        for name in ("vertical_nodes", "horizontal_nodes", "center_nodes"):
+        for name in ("nodes", "vertical_nodes", "center_nodes"):
             nodes0 = getattr(self, name)
             nodes1 = getattr(genome1, name)
             nodes2 = getattr(genome2, name)
@@ -125,7 +125,7 @@ class Genome:
         # Mutate genes.
         for g in (
             list(self.vertical_nodes.values()) +
-            list(self.horizontal_nodes.values()) +
+            list(self.nodes.values()) +
             list(self.center_nodes.values()) +
             [self.vertical_bias, self.horizontal_bias, self.center_bias]
         ):
@@ -141,10 +141,10 @@ class Genome:
         Returns the genetic distance between this genome and the other. This
         distance value is used to compute genome compatibility for speciation.
         """
-        nodes_self = set(list(self.horizontal_nodes) +
+        nodes_self = set(list(self.nodes) +
                          list(self.vertical_nodes) +
                          list(self.center_nodes))
-        nodes_other = set(list(other.horizontal_nodes) +
+        nodes_other = set(list(other.nodes) +
                           list(other.vertical_nodes) +
                           list(other.center_nodes))
         inter_ = len(nodes_self & nodes_other)
@@ -156,4 +156,4 @@ class Genome:
     def size(self):
         return (len(self.vertical_nodes) +
                 len(self.center_nodes) +
-                len(self.horizontal_nodes))
+                len(self.nodes))
