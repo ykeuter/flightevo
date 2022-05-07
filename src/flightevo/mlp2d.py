@@ -81,9 +81,9 @@ class Mlp2D:
             for c in coords
         ]
         w, b = Mlp2D._apply_cppn(
-            cppn.get_weights, cppn.get_biases, coords, device)
+            cppn.get_weights, None, coords, device)
         torch.cuda.empty_cache()
-        return Mlp2D(w, b, device, sigmoid_activation)
+        return Mlp2D(w, b, device, identity_activation)
 
     @staticmethod
     def _get_coord_inputs(in_coords, out_coords):

@@ -43,15 +43,28 @@ class Dodger:
 
     def _transform_activations(self, a):
         # a: up, right, down, left, center
-        if a[0] > a[2]:
-            vz = a[0].item() * self._speed_z
-        else:
-            vz = -a[2].item() * self._speed_z
-        if a[1] > a[3]:
-            vy = -a[1].item() * self._speed_y
-        else:
-            vy = a[3].item() * self._speed_y
-        vx = a[4].item() * self._speed_x
+        vx, vy, vz = self._speed_x, 0, 0
+        index = a.argmax().item()
+        if index == 0:  # up
+            vz = self._speed_z
+        elif index == 1:  # right
+            vy = -self._speed_y
+        elif index == 2:  # down
+            vz = -self._speed_z
+        elif index == 3:  # left
+            vy = self._speed_y
+        # elif index == 4:  # center
+
+        # if a[0] > a[2]:
+        #     vz = a[0].item() * self._speed_z
+        # else:
+        #     vz = -a[2].item() * self._speed_z
+        # if a[1] > a[3]:
+        #     vy = -a[1].item() * self._speed_y
+        # else:
+        #     vy = a[3].item() * self._speed_y
+        # vx = a[4].item() * self._speed_x
+
         return [vx, vy, vz]
 
     def _transform_state(self, state):
