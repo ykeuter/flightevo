@@ -71,3 +71,16 @@ with bias.
 
 # g0y7lg3h
 constant speed: 2, .5, 1. 16x16. vertical separate.
+
+# 39ym9h8q
+speed: 2, .5, .5. 16x16. env-0. no vertical
+
+# u025dxzp
+based on previous. 30x40. multi-level. stuck at env-2
+
+# nh4i9o8u
+based on prev cp-10. slow start.
+
+# zcka2m4k
+continuation with gamma = 2.2.
+

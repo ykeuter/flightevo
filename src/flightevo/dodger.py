@@ -37,13 +37,40 @@ class Dodger:
         s = self._transform_state(state)
         i = self._transform_img(img)
         a = self._mlp.activate(torch.cat((s, i),))
-        v = self._transform_activations(a)
+        v = self._transform_activations(a, state)
+
+        # v = [2.5, -1, 0]
+        # if state.pos[0] > 3:
+        #     v[1] = 2
+        #     v[2] = 0
+        # if state.pos[0] > 4:
+        #     v[1] = -2
+        #     v[2] = 0
+        # if state.pos[0] > 5:
+        #     v[1] = 2
+        #     v[2] = 0
+        # if state.pos[0] > 6:
+        #     v[1] = -2
+        #     v[2] = 0
+
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
 
-    def _transform_activations(self, a):
+    def _transform_activations(self, a, state):
         # a: up, right, down, left, center
-        vx, vy, vz = self._speed_x, 0, 0
+        # if state.pos[1] < self._bounds[0] + 1:  # avoid right
+        #     a[1] = -float("inf")
+        # if state.pos[1] > self._bounds[1] - 1:  # avoid left
+        #     a[3] = -float("inf")
+        # if state.pos[2] < self._bounds[2] + 1:  # avoid down
+        #     a[2] = -float("inf")
+        # if state.pos[2] > self._bounds[3] - 1:  # avoid up
+        #     a[0] = -float("inf")
+
+        vy, vz = 0, 0
+        vx = self._speed_x
+        # if state.pos[0] < 3.:
+        #     vx *= .5
         index = a.argmax().item()
         if index == 0:  # up
             vz = self._speed_z
