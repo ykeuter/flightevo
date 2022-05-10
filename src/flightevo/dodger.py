@@ -153,15 +153,15 @@ class Dodger:
         down = state.pos[2] - self._bounds[2]
         up = self._bounds[3] - state.pos[2]
         h, w, b = self._resolution_height, self._resolution_width, self.BORDER
-        new_img = torch.hstack(
-            torch.full((h + 2 * b, b), left),
-            torch.vstack(
-                torch.full((b, w), up),
+        new_img = torch.hstack((
+            torch.full((h + 2 * b, b), 1 - left / 100),
+            torch.vstack((
+                torch.full((b, w), 1 - up / 100),
                 new_img,
-                torch.full((b, w), down),
-            ),
-            torch.full((h + 2 * b, b), right),
-        )
+                torch.full((b, w), 1 - down / 100),
+            )),
+            torch.full((h + 2 * b, b), 1 - right / 100),
+        ))
         # non-linear scaling
         new_img.pow_(self._gamma)
 
