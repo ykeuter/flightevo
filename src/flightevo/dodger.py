@@ -100,7 +100,7 @@ class Dodger:
         return s
 
     def _get_coords(self):
-        r = 5
+        r = 10
 
         # state = [
         #     (0, r * 2, ),  # up
