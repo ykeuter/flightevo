@@ -13,6 +13,8 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
+    BORDER = 5
+
     def __init__(self, resolution_width, resolution_height,
                  speed_x, speed_y, speed_z, bounds, gamma):
         self._resolution_width = resolution_width
@@ -34,29 +36,15 @@ class Dodger:
         self._mlp = Mlp2D.from_cppn(cppn, self._coords, self._device)
 
     def compute_command_vision_based(self, state, img):
-        s = self._transform_state(state)
-        i = self._transform_img(img)
-        a = self._mlp.activate(torch.cat((s, i),))
-        v = self._transform_activations(a, state)
-
-        # v = [2.5, -1, 0]
-        # if state.pos[0] > 3:
-        #     v[1] = 2
-        #     v[2] = 0
-        # if state.pos[0] > 4:
-        #     v[1] = -2
-        #     v[2] = 0
-        # if state.pos[0] > 5:
-        #     v[1] = 2
-        #     v[2] = 0
-        # if state.pos[0] > 6:
-        #     v[1] = -2
-        #     v[2] = 0
+        # s = self._transform_state(state)
+        i = self._transform_img(img, state)
+        a = self._mlp.activate(i)
+        v = self._transform_activations(a)
 
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
 
-    def _transform_activations(self, a, state):
+    def _transform_activations(self, a):
         # a: up, right, down, left, center
         # if state.pos[1] < self._bounds[0] + 1:  # avoid right
         #     a[1] = -float("inf")
@@ -114,38 +102,19 @@ class Dodger:
     def _get_coords(self):
         r = 5
 
-        # inputs = []
-        # z = 0
-        state = [
-            (0, r * 2, ),  # up
-            (r * 2, 0, ),  # right
-            (0, -r * 2, ),  # down
-            (-r * 2, 0, ),  # left
-        ]
+        # state = [
+        #     (0, r * 2, ),  # up
+        #     (r * 2, 0, ),  # right
+        #     (0, -r * 2, ),  # down
+        #     (-r * 2, 0, ),  # left
+        # ]
         img = self._get_grid(
-            self._resolution_width, self._resolution_height, r * 2, r * 2)
-        # img = [(x, y, z) for x, y in grid]
-        # inputs += img
+            self._resolution_width + self.BORDER * 2,
+            self._resolution_height + self.BORDER * 2,
+            r * 2,
+            r * 2
+        )
 
-        # hidden1 = []
-        # z = 1
-        # grid = self._get_grid(4, 4, r * 2, r * 2)  # max 12x12
-        # layer1 = [(x, y, z) for x, y in grid]
-        # hidden1 += layer1
-        # z = 2
-        # layer2 = [(x, y, z) for x, y in grid]
-        # hidden1 += layer2
-
-        # hidden2 = []
-        # z = 3
-        # grid = self._get_grid(4, 4, r * 2, r * 2)  # max 8x8
-        # layer1 = [(x, y, z) for x, y in grid]
-        # hidden2 += layer1
-        # z = 4
-        # layer2 = [(x, y, z) for x, y in grid]
-        # hidden2 += layer2
-
-        # z = 5
         outputs = [
             (0, r, ),  # up
             # (r, r, ),  # upper right
@@ -158,8 +127,7 @@ class Dodger:
             (0, 0, ),  # center
         ]
 
-        # return [inputs, hidden1, hidden2, outputs]
-        return [state + img, outputs]
+        return [img, outputs]
 
     @staticmethod
     def _get_grid(ncols, nrows, width, height):
@@ -167,43 +135,37 @@ class Dodger:
             (
                 (c / ncols + 1 / ncols / 2 - .5) * width,
                 (r / nrows + 1 / nrows / 2 - .5) * -height,
-                # c * width / ncols - width / 2,
-                # -r * height / nrows + height / 2,
             )
             for r in range(nrows)
             for c in range(ncols)
         ]
 
-    def _transform_img(self, img):
+    def _transform_img(self, img, state):
         r, c = img.shape
         k0 = int(r / self._resolution_height)
         k1 = int(c / self._resolution_width)
         # copy needed due to non-writeable nparray
         new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
+        # add border
+        right = state.pos[1] - self._bounds[0]
+        left = self._bounds[1] - state.pos[1]
+        down = state.pos[2] - self._bounds[2]
+        up = self._bounds[3] - state.pos[2]
+        h, w, b = self._resolution_height, self._resolution_width, self.BORDER
+        new_img = torch.hstack(
+            torch.full((h + 2 * b, b), left),
+            torch.vstack(
+                torch.full((b, w), up),
+                new_img,
+                torch.full((b, w), down),
+            ),
+            torch.full((h + 2 * b, b), right),
+        )
+        # non-linear scaling
         new_img.pow_(self._gamma)
-
-        # len_y = (self._bounds[1] - self._bounds[0]) / 2
-        # mid_y = (self._bounds[1] + self._bounds[0]) / 2
-        # len_z = (self._bounds[3] - self._bounds[2]) / 2
-        # mid_z = (self._bounds[3] + self._bounds[2]) / 2
-        # if state.pos[1] > mid_y:  # left
-        #     new_img[:, :int(self._resolution_width / 2)].clamp_(
-        #         (state.pos[1] - mid_y) / len_y)
-        # else:  # right
-        #     new_img[:, int(self._resolution_width / 2):].clamp_(
-        #         (mid_y - state.pos[1]) / len_y)
-        # if state.pos[2] > mid_z:  # up
-        #     new_img[:int(self._resolution_height / 2), :].clamp_(
-        #         (state.pos[2] - mid_z) / len_z)
-        # else:  # down
-        #     new_img[int(self._resolution_height / 2):, :].clamp_(
-        #         (mid_z - state.pos[2]) / len_z)
 
         msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
         self._img_pub.publish(msg)
-        # print(r, c)
-        # cv2.imshow("depth resized", new_img.numpy())
-        # cv2.waitKey()
-        # new_img /= (self._resolution_width * self._resolution_height)
+
         return new_img.view(-1)
