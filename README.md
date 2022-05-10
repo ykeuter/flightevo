@@ -84,3 +84,9 @@ based on prev cp-10. slow start.
 # zcka2m4k
 continuation with gamma = 2.2.
 
+# 0pzdc08x
+based on u025dxzp but with speed_yz = 1.
+
+# 4rom8lgv
+based on u025dxzp but with speed_yz = .75. still struggling
+
