@@ -1,5 +1,6 @@
 from collections import namedtuple
 import cv2
+import random
 import rospy
 import torch
 from sensor_msgs.msg import Image
@@ -13,7 +14,7 @@ AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
 
 
 class Dodger:
-    BORDER = 5
+    BORDER = 0
 
     def __init__(self, resolution_width, resolution_height,
                  speed_x, speed_y, speed_z, bounds, gamma):
@@ -60,6 +61,10 @@ class Dodger:
         # if state.pos[0] < 3.:
         #     vx *= .5
         index = a.argmax().item()
+
+        # self._speed_x, self._speed_y, self._speed_z = 1.4, 1.4, 1.4
+        # vx = self._speed_x
+        # index = random.randint(0, 4)
         if index == 0:  # up
             vz = self._speed_z
         elif index == 1:  # right
@@ -69,6 +74,7 @@ class Dodger:
         elif index == 3:  # left
             vy = self._speed_y
         # elif index == 4:  # center
+        #     vx = 2.
 
         # if a[0] > a[2]:
         #     vz = a[0].item() * self._speed_z
@@ -147,21 +153,31 @@ class Dodger:
         # copy needed due to non-writeable nparray
         new_img = 1 - torch.tensor(img) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),)
+
         # add border
-        right = state.pos[1] - self._bounds[0]
-        left = self._bounds[1] - state.pos[1]
-        down = state.pos[2] - self._bounds[2]
-        up = self._bounds[3] - state.pos[2]
-        h, w, b = self._resolution_height, self._resolution_width, self.BORDER
-        new_img = torch.hstack((
-            torch.full((h + 2 * b, b), 1 - left / 100),
-            torch.vstack((
-                torch.full((b, w), 1 - up / 100),
-                new_img,
-                torch.full((b, w), 1 - down / 100),
-            )),
-            torch.full((h + 2 * b, b), 1 - right / 100),
-        ))
+        right = max(state.pos[1] - self._bounds[0] - 1, .0)
+        left = max(self._bounds[1] - state.pos[1] - 1, .0)
+        down = max(state.pos[2] - self._bounds[2] - 1, .0)
+        up = max(self._bounds[3] - state.pos[2] - 1, .0)
+
+        bw = int(self._resolution_width / 4)
+        bh = int(self._resolution_height / 4)
+        new_img[:bh, :].clamp_(1 - up / 100)
+        new_img[-bh:, :].clamp_(1 - down / 100)
+        new_img[:, :bw].clamp_(1 - left / 100)
+        new_img[:, -bw:].clamp_(1 - right / 100)
+
+        # h, w, b = self._resolution_height, self._resolution_width, self.BORDE
+        # new_img = torch.hstack((
+        #     torch.full((h + 2 * b, b), 1 - left / 100),
+        #     torch.vstack((
+        #         torch.full((b, w), 1 - up / 100),
+        #         new_img,
+        #         torch.full((b, w), 1 - down / 100),
+        #     )),
+        #     torch.full((h + 2 * b, b), 1 - right / 100),
+        # ))
+
         # non-linear scaling
         new_img.pow_(self._gamma)
 

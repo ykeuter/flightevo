@@ -90,3 +90,6 @@ based on u025dxzp but with speed_yz = 1.
 # 4rom8lgv
 based on u025dxzp but with speed_yz = .75. still struggling
 
+# jnyh6lhd
+with border from scratch.
+
