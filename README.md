@@ -93,3 +93,9 @@ based on u025dxzp but with speed_yz = .75. still struggling
 # jnyh6lhd
 with border from scratch.
 
+# c5zrcymj
+border in img from scratch.
+
+# zb1oarqh
+continuation with smooth start.
+
