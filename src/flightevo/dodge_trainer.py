@@ -89,8 +89,9 @@ class DodgeTrainer:
         if "env_folder" in config["environment"]:
             self._levels = repeat(config["environment"]["env_folder"])
         else:
+            r = config["environment"]["env_range"]
             self._levels = (
-                "environment_{}".format(i) for i in cycle(range(100))
+                "environment_{}".format(i) for i in cycle(range(r[0], r[1]))
             )
         self._current_level = None
 
