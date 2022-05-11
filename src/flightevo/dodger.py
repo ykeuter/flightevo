@@ -10,7 +10,7 @@ from flightevo.mlp2d import Mlp2D
 
 
 AgileCommand = namedtuple("AgileCommand", ["mode", "velocity", "yawrate", "t"])
-AgileQuadState = namedtuple("AgileCommand", ["t", "pos"])
+AgileQuadState = namedtuple("AgileQuadState", ["t", "pos", "vel"])
 
 
 class Dodger:
@@ -40,12 +40,12 @@ class Dodger:
         # s = self._transform_state(state)
         i = self._transform_img(img, state)
         a = self._mlp.activate(i)
-        v = self._transform_activations(a)
+        v = self._transform_activations(a, state)
 
         return AgileCommand(
             t=state.t, mode=2, yawrate=0, velocity=v)
 
-    def _transform_activations(self, a):
+    def _transform_activations(self, a, state):
         # a: up, right, down, left, center
         # if state.pos[1] < self._bounds[0] + 1:  # avoid right
         #     a[1] = -float("inf")
@@ -57,7 +57,7 @@ class Dodger:
         #     a[0] = -float("inf")
 
         vy, vz = 0, 0
-        vx = self._speed_x
+        vx = min(self._speed_x, state.vel[0] + .4)
         # if state.pos[0] < 3.:
         #     vx *= .5
         index = a.argmax().item()

@@ -180,13 +180,16 @@ class DodgeTrainer:
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
                         msg.pose.position.z])
+        vel = np.array([msg.velocity.linear.x,
+                        msg.velocity.linear.y,
+                        msg.velocity.linear.z])
         if (
             (pos <= self._bounding_box[:, 0]) |
             (pos >= self._bounding_box[:, 1])
         ).any():
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
-        self._state = AgileQuadState(t=msg.t, pos=pos)
+        self._state = AgileQuadState(t=msg.t, pos=pos, vel=vel)
 
     def img_callback(self, msg):
         if not self._active:
