@@ -57,7 +57,7 @@ class Dodger:
         #     a[0] = -float("inf")
 
         vy, vz = 0, 0
-        vx = min(self._speed_x, state.vel[0] + .2)
+        vx = min(self._speed_x, state.vel[0] + .4)
         # if state.pos[0] < 3.:
         #     vx *= .5
         index = a.argmax().item()
