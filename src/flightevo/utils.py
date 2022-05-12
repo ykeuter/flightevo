@@ -8,6 +8,10 @@ import argparse
 from pathlib import Path
 
 
+AgileCommand = namedtuple("AgileCommand", ["mode", "velocity", "yawrate", "t"])
+AgileQuadState = namedtuple("AgileQuadState", ["t", "pos", "vel"])
+
+
 def quaternion_to_euler(x, y, z, w):
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
