@@ -91,7 +91,7 @@ class DodgeTrainer:
         else:
             r = config["environment"]["env_range"]
             self._levels = (
-                "environment_{}".format(i) for i in cycle(range(r[0], r[1]))
+                "environment_{}".format(i) for i in range(r[0], r[1])
             )
         self._current_level = None
 
@@ -128,7 +128,11 @@ class DodgeTrainer:
 
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
-        self._current_level = next(self._levels)
+        try:
+            self._current_level = next(self._levels)
+        except StopIteration:
+            rospy.signal_shutdown("No more environments!")
+            raise
         args = ["env:={}".format(self._current_level)]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
@@ -144,6 +148,7 @@ class DodgeTrainer:
             self._current_genome = next(self._generator)
         except neat.CompleteExtinctionException:
             rospy.signal_shutdown("No more genomes!")
+            raise
         except StopIteration:
             self._winner_reporter.reset(self._current_level)
             self._generator = iter(self._population)
