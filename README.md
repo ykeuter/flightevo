@@ -102,3 +102,6 @@ continuation with smooth start.
 # f062czs2
 continuation.
 
+# pqx6bg8e
+from scratch. acc=.4
+
