@@ -13,6 +13,7 @@ GAMMA = 2.2
 with open("weights.pickle", "rb") as f:
     WEIGHTS = pickle.load(f)
 
+
 def compute_command_vision_based(self, state, img):
     # s = self._transform_state(state)
     i = _transform_img(img, state)
@@ -21,15 +22,17 @@ def compute_command_vision_based(self, state, img):
     return AgileCommand(
         t=state.t, mode=2, yawrate=0, velocity=v)
 
+
 def activate(inputs):
     with torch.no_grad():
         x = torch.as_tensor(
             inputs, dtype=torch.float32, device="cuda").unsqueeze(1)
         return WEIGHTS.mm(x).squeeze(1)
 
+
 def _transform_activations(a, state):
     vy, vz = 0, 0
-    vx = min(SPEED_X, state.vel[0] + .4)
+    vx = min(SPEED_X, state.vel[0] + .2)
     index = a.argmax().item()
     if index == 0:  # up
         vz = SPEED_Z
@@ -40,6 +43,7 @@ def _transform_activations(a, state):
     elif index == 3:  # left
         vy = SPEED_Y
     return [vx, vy, vz]
+
 
 def _transform_img(img, state):
     r, c = img.shape

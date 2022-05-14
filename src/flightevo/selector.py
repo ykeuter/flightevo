@@ -90,7 +90,7 @@ class Selector:
 
     def _save(self):
         s = sorted(self._genomes, reverse=True, key=lambda x: x.fitness)
-        for i, g in s[:self._size]:
+        for i, g in enumerate(s[:self._size]):
             fn = self._log_dir / "member-{}.pickle".format(i)
             with open(fn, "wb") as f:
                 pickle.dump(g, f)
@@ -190,9 +190,10 @@ class Selector:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/eval")
-    parser.add_argument("--env", default="cfg/env.yaml")
-    parser.add_argument("--checkpoint", default="")
+    parser.add_argument("--dir", default="logs/g8852vh5_eval")
+    parser.add_argument("--env", default="logs/g8852vh5_eval/env.yaml")
+    parser.add_argument(
+        "--checkpoint", default="logs/g8852vh5_eval/checkpoint-45")
     parser.add_argument("--size", default=20)
     args = parser.parse_args()
     rospy.init_node('selector', anonymous=False)

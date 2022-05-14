@@ -105,3 +105,8 @@ continuation.
 # pqx6bg8e
 from scratch. acc=.4
 
+# 4jk7h02c
+from scratch. acc=.2. full-resolution
+
+# g8852vh5
+continuation.

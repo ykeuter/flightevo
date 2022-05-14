@@ -35,7 +35,7 @@ class Evaluator:
         self._generator = iter(self._pickles)
         self._current_name = None
         self._current_genome = None
-        with open(Path(log_dir / "env.yaml")) as f:
+        with open(Path(log_dir) / "env.yaml") as f:
             config = YAML().load(f)
         self._dodger = Dodger(
             resolution_width=config["dodger"]["resolution_width"],
@@ -210,10 +210,10 @@ class Evaluator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/eval")
+    parser.add_argument("--dir", default="logs/eval_high_res")
     args = parser.parse_args()
     rospy.init_node('evaluator', anonymous=False)
     d = Path(args.dir)
-    pickles = sorted(d.glob("*.pickles"))
+    pickles = sorted(d.glob("*.pickle"))
     e = Evaluator(args.dir, pickles)
     e.run()
