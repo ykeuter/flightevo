@@ -1,5 +1,6 @@
 import torch
 import pickle
+from pathlib import Path
 from utils import AgileCommand
 
 SPEED_X = 2.0
@@ -9,30 +10,34 @@ RES_WIDTH = 40
 RES_HEIGHT = 30
 BOUNDS = [-10, 10, 0, 10]
 GAMMA = 2.2
+ACC = .4
+DEVICE = "cuda"
 
-with open("weights.pickle", "rb") as f:
+with open(Path(__file__).parent / "weights.pickle", "rb") as f:
     WEIGHTS = pickle.load(f)
 
 
-def compute_command_vision_based(self, state, img):
+def compute_command_vision_based(state, img):
     # s = self._transform_state(state)
     i = _transform_img(img, state)
-    a = self._mlp.activate(i)
+    a = _activate(i)
     v = _transform_activations(a, state)
-    return AgileCommand(
-        t=state.t, mode=2, yawrate=0, velocity=v)
+    c = AgileCommand(2)
+    c.t = state.t
+    c.velocity = v
+    return c
 
 
-def activate(inputs):
+def _activate(inputs):
     with torch.no_grad():
         x = torch.as_tensor(
-            inputs, dtype=torch.float32, device="cuda").unsqueeze(1)
+            inputs, dtype=torch.float32, device=DEVICE).unsqueeze(1)
         return WEIGHTS.mm(x).squeeze(1)
 
 
 def _transform_activations(a, state):
     vy, vz = 0, 0
-    vx = min(SPEED_X, state.vel[0] + .2)
+    vx = min(SPEED_X, state.vel[0] + ACC)
     index = a.argmax().item()
     if index == 0:  # up
         vz = SPEED_Z

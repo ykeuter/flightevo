@@ -190,10 +190,10 @@ class Selector:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/g8852vh5_eval")
-    parser.add_argument("--env", default="logs/g8852vh5_eval/env.yaml")
+    parser.add_argument("--dir", default="logs/f062czs2_eval")
+    parser.add_argument("--env", default="logs/f062czs2_eval/env.yaml")
     parser.add_argument(
-        "--checkpoint", default="logs/g8852vh5_eval/checkpoint-45")
+        "--checkpoint", default="logs/f062czs2_eval/checkpoint-48")
     parser.add_argument("--size", default=20)
     args = parser.parse_args()
     rospy.init_node('selector', anonymous=False)

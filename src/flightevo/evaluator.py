@@ -210,7 +210,7 @@ class Evaluator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/eval_high_res")
+    parser.add_argument("--dir", default="logs/eval_low_res")
     args = parser.parse_args()
     rospy.init_node('evaluator', anonymous=False)
     d = Path(args.dir)

@@ -4,3 +4,4 @@ logs/*/
 .vscode/
 .env
 sandbox.py
+*.pickle
