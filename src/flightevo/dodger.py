@@ -17,7 +17,7 @@ class Dodger:
     BORDER = 0
 
     def __init__(self, resolution_width, resolution_height,
-                 speed_x, speed_y, speed_z, bounds, gamma):
+                 speed_x, speed_y, speed_z, bounds, gamma, acc):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -31,6 +31,7 @@ class Dodger:
         self._speed_z = speed_z
         self._gamma = gamma
         self._bounds = bounds  # min_y, max_y, min_z, max_z
+        self._acc = acc
 
     def load(self, cppn):
         del self._mlp
@@ -57,7 +58,7 @@ class Dodger:
         #     a[0] = -float("inf")
 
         vy, vz = 0, 0
-        vx = min(self._speed_x, state.vel[0] + .4)
+        vx = min(self._speed_x, state.vel[0] + self._acc)
         # if state.pos[0] < 3.:
         #     vx *= .5
         index = a.argmax().item()

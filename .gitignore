@@ -4,4 +4,6 @@ logs/*/
 .vscode/
 .env
 sandbox.py
+sandbox2.py
 *.pickle
+run_competition.py
