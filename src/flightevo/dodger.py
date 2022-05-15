@@ -7,10 +7,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 from flightevo.mlp2d import Mlp2D
-
-
-AgileCommand = namedtuple("AgileCommand", ["mode", "velocity", "yawrate", "t"])
-AgileQuadState = namedtuple("AgileQuadState", ["t", "pos", "vel"])
+from flightevo.utils import AgileCommand
 
 
 class Dodger:
@@ -42,9 +39,10 @@ class Dodger:
         i = self._transform_img(img, state)
         a = self._mlp.activate(i)
         v = self._transform_activations(a, state)
-
-        return AgileCommand(
-            t=state.t, mode=2, yawrate=0, velocity=v)
+        c = AgileCommand(2)
+        c.t = state.t
+        c.velocity = v
+        return c
 
     def _transform_activations(self, a, state):
         # a: up, right, down, left, center

@@ -23,8 +23,8 @@ from neat.function_reporter import FunctionReporter
 from itertools import repeat, cycle
 from threading import Thread
 
-from flightevo.utils import replace_config, reset_stagnation
-from flightevo.dodger import Dodger, AgileQuadState
+from flightevo.utils import replace_config, reset_stagnation, AgileQuadState
+from flightevo.dodger import Dodger
 from flightevo.genome import Genome
 
 
@@ -156,7 +156,7 @@ class Selector:
         ).any():
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
-        self._state = AgileQuadState(t=msg.t, pos=pos, vel=vel)
+        self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):
         if not self._active:
