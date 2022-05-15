@@ -18,7 +18,7 @@ class Dodger:
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
-        self._device = "cpu"
+        self._device = "cuda"
         self._coords = self._get_coords()
         self._img_pub = rospy.Publisher(
             "/kingfisher/dodger/depth", Image, queue_size=1)

@@ -110,3 +110,6 @@ from scratch. acc=.2. full-resolution
 
 # g8852vh5
 continuation.
+
+# konqo6lr
+16x16 with speed 3.

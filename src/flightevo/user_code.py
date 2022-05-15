@@ -3,15 +3,16 @@ import pickle
 from pathlib import Path
 from utils import AgileCommand
 
-SPEED_X = 2.0
-SPEED_Y = .8
-SPEED_Z = .8
-RES_WIDTH = 40
-RES_HEIGHT = 30
+SPEED_X = 3.
+SPEED_Y = 1.2
+SPEED_Z = 1.2
+RES_WIDTH = 16
+RES_HEIGHT = 16
 BOUNDS = [-10, 10, 0, 10]
 GAMMA = 2.2
 ACC = .4
 DEVICE = "cpu"
+MARGIN = .8
 
 with open(Path(__file__).parent / "weights.pickle", "rb") as f:
     WEIGHTS = pickle.load(f).to(device=DEVICE)
@@ -36,6 +37,16 @@ def _activate(inputs):
 
 
 def _transform_activations(a, state):
+    # a: up, right, down, left, center
+    if state.pos[1] < BOUNDS[0] + MARGIN:  # avoid right
+        a[1] = -float("inf")
+    if state.pos[1] > BOUNDS[1] - MARGIN:  # avoid left
+        a[3] = -float("inf")
+    if state.pos[2] < BOUNDS[2] + MARGIN:  # avoid down
+        a[2] = -float("inf")
+    if state.pos[2] > BOUNDS[3] - MARGIN:  # avoid up
+        a[0] = -float("inf")
+
     vy, vz = 0, 0
     vx = min(SPEED_X, state.vel[0] + ACC)
     index = a.argmax().item()
