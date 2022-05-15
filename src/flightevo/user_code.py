@@ -11,10 +11,10 @@ RES_HEIGHT = 30
 BOUNDS = [-10, 10, 0, 10]
 GAMMA = 2.2
 ACC = .4
-DEVICE = "cuda"
+DEVICE = "cpu"
 
 with open(Path(__file__).parent / "weights.pickle", "rb") as f:
-    WEIGHTS = pickle.load(f)
+    WEIGHTS = pickle.load(f).to(device=DEVICE)
 
 
 def compute_command_vision_based(state, img):
