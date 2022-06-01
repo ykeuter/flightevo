@@ -112,4 +112,5 @@ from scratch. acc=.2. full-resolution
 continuation.
 
 # konqo6lr
-16x16 with speed 3.
+16x16 with speed 3. icra winner is coming from this run.
+member-4
