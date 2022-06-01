@@ -63,9 +63,6 @@ class Selector:
         self._current_level = config["environment"]["env_folder"]
 
     def run(self):
-        self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        roslaunch.configure_logging(self._rluuid)
-        self._launch()
         rospy.Subscriber(
             "/kingfisher/dodgeros_pilot/state", QuadState, self.state_callback,
             queue_size=1, tcp_nodelay=True)
@@ -86,6 +83,9 @@ class Selector:
             "/kingfisher/dodgeros_pilot/enable", Bool, queue_size=1)
         self._start_pub = rospy.Publisher(
             "/kingfisher/dodgeros_pilot/start", Empty, queue_size=1)
+        self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        roslaunch.configure_logging(self._rluuid)
+        self._launch()
         self._reset()
         rospy.spin()
 
@@ -139,10 +139,12 @@ class Selector:
         if not self._active:
             return
         if self._crashed:
+            # print("crashed")
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
+            # print("timeout")
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -154,6 +156,7 @@ class Selector:
             (pos <= self._bounding_box[:, 0]) |
             (pos >= self._bounding_box[:, 1])
         ).any():
+            # print("oob")
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
         self._state = AgileQuadState(msg)
@@ -191,10 +194,10 @@ class Selector:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/f062czs2_eval")
-    parser.add_argument("--env", default="logs/f062czs2_eval/env.yaml")
+    parser.add_argument("--dir", default="logs/debug")
+    parser.add_argument("--env", default="logs/debug/env.yaml")
     parser.add_argument(
-        "--checkpoint", default="logs/f062czs2_eval/checkpoint-48")
+        "--checkpoint", default="logs/debug/checkpoint-4")
     parser.add_argument("--size", default=20)
     args = parser.parse_args()
     rospy.init_node('selector', anonymous=False)
