@@ -32,7 +32,7 @@ class Evaluator:
     def __init__(self, genomes, log_dir, env_cfg):
         self._filename = Path(log_dir) / "stats.csv"
         self._genomes = genomes
-        self._generator = iter(self._genomes)
+        self._generator = iter(self._genomes.items())
         self._current_name = None
         self._current_genome = None
         with open(Path(env_cfg)) as f:
@@ -125,7 +125,7 @@ class Evaluator:
         try:
             self._current_name, self._current_genome = next(self._generator)
         except StopIteration:
-            self._generator = iter(self._genomes)
+            self._generator = iter(self._genomes.items())
             self._current_name, self._current_genome = next(self._generator)
             self._level_up()
         self._current_genome.fitness = 0
@@ -215,10 +215,10 @@ class Evaluator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/debug")
-    parser.add_argument("--env", default="logs/debug/env.yaml")
+    parser.add_argument("--dir", default="logs/paper")
+    parser.add_argument("--env", default="logs/paper/env.yaml")
     parser.add_argument(
-        "--checkpoint", default="logs/debug/checkpoint-4")
+        "--checkpoint", default="logs/paper/checkpoint-13")
     args = parser.parse_args()
     pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
     prefix = Path(args.checkpoint).name
