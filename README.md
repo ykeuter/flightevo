@@ -114,3 +114,18 @@ continuation.
 # konqo6lr
 16x16 with speed 3. icra winner is coming from this run.
 member-4
+
+# zi3o8e96
+extended run before finals.
+
+# zc5fwcxj
+new run from scratch. same settings.
+
+# vm74uiok
+continue with speed=3.5
+
+# fvit3r2v
+continue with speed=4.
+
+# f6psb37l
+continue with speed=4.5. failed to finish.

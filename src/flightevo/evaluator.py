@@ -29,13 +29,13 @@ from flightevo.genome import Genome
 
 
 class Evaluator:
-    def __init__(self, log_dir, pickles):
+    def __init__(self, genomes, log_dir, env_cfg):
         self._filename = Path(log_dir) / "stats.csv"
-        self._pickles = list(pickles)
-        self._generator = iter(self._pickles)
+        self._genomes = genomes
+        self._generator = iter(self._genomes)
         self._current_name = None
         self._current_genome = None
-        with open(Path(log_dir) / "env.yaml") as f:
+        with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Dodger(
             resolution_width=config["dodger"]["resolution_width"],
@@ -47,7 +47,7 @@ class Evaluator:
             acc=config["dodger"]["acc"],
             bounds=config['environment']['world_box'][2:],
         )
-        self._xmax = int(config['environment']['target'])
+        self._xmax = config['environment']['target']
         self._timeout = config['environment']['timeout']
         self._bounding_box = np.reshape(np.array(
             config['environment']['world_box'], dtype=float), (3, 2))
@@ -67,13 +67,6 @@ class Evaluator:
                 "environment_{}".format(i) for i in range(r[0], r[1])
             )
         self._current_level = None
-
-    def _load(self, p):
-        p = Path(p)
-        with open(p, "rb") as f:
-            g = pickle.load(f)
-        self._current_name = p.name
-        return g
 
     def run(self):
         rospy.Subscriber(
@@ -130,10 +123,10 @@ class Evaluator:
                                             self._current_name,
                                             self._current_genome.fitness))
         try:
-            self._current_genome = self._load(next(self._generator))
+            self._current_name, self._current_genome = next(self._generator)
         except StopIteration:
-            self._generator = iter(self._pickles)
-            self._current_genome = self._load(next(self._generator))
+            self._generator = iter(self._genomes)
+            self._current_name, self._current_genome = next(self._generator)
             self._level_up()
         self._current_genome.fitness = 0
         with self._lock:
@@ -160,11 +153,18 @@ class Evaluator:
             return
         if self._crashed:
             print("crashed")
+            self._current_genome.fitness = self._timeout
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
             print("timeout")
+            self._current_genome.fitness = self._timeout
+            return self._reset()
+        if msg.pose.position.x >= self._xmax:
+            print("success")
+            t = msg.t - self._start_time
+            self._current_genome.fitness = t
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -177,8 +177,9 @@ class Evaluator:
             (pos >= self._bounding_box[:, 1])
         ).any():
             print("oob")
+            self._current_genome.fitness = self._timeout
             return self._reset()
-        self._current_genome.fitness = msg.pose.position.x
+        # self._current_genome.fitness = msg.pose.position.x
         self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):
@@ -215,9 +216,16 @@ class Evaluator:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", default="logs/debug")
+    parser.add_argument("--env", default="logs/debug/env.yaml")
+    parser.add_argument(
+        "--checkpoint", default="logs/debug/checkpoint-4")
     args = parser.parse_args()
+    pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+    prefix = Path(args.checkpoint).name
+    genomes = {
+        "{}-{}".format(prefix, i): v
+        for i, v in enumerate(pop.population.values())
+    }
     rospy.init_node('evaluator', anonymous=False)
-    d = Path(args.dir)
-    pickles = sorted(d.glob("*.pickle"))
-    e = Evaluator(args.dir, pickles)
+    e = Evaluator(genomes, args.dir, args.env)
     e.run()
