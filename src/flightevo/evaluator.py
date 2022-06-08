@@ -218,14 +218,21 @@ if __name__ == "__main__":
     parser.add_argument("--dir", default="logs/paper")
     parser.add_argument("--env", default="logs/paper/env.yaml")
     parser.add_argument(
-        "--checkpoint", default="logs/paper/checkpoint-13")
+        "--checkpoint", default="")
+    parser.add_argument(
+        "--agent", default="logs/paper/winner.pickle")
     args = parser.parse_args()
-    pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
-    prefix = Path(args.checkpoint).name
-    genomes = {
-        "{}-{}".format(prefix, i): v
-        for i, v in enumerate(pop.population.values())
-    }
+    if args.checkpoint:
+        pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+        prefix = Path(args.checkpoint).stem
+        genomes = {
+            "{}-{}".format(prefix, i): v
+            for i, v in enumerate(pop.population.values())
+        }
+    if args.agent:
+        p = Path(args.agent)
+        with open(p, "rb") as f:
+            genomes = {p.stem: pickle.load(f)}
     rospy.init_node('evaluator', anonymous=False)
     e = Evaluator(genomes, args.dir, args.env)
     e.run()
