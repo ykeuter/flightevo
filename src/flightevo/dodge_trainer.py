@@ -37,6 +37,7 @@ class DodgeTrainer:
             neat.DefaultStagnation,
             neat_cfg,
         )
+        self._env_cfg = env_cfg
         if winner_pickle:
             with open(winner_pickle, "rb") as f:
                 w = pickle.load(f)
@@ -134,7 +135,10 @@ class DodgeTrainer:
         except StopIteration:
             rospy.signal_shutdown("No more environments!")
             raise
-        args = ["env:={}".format(self._current_level)]
+        args = [
+            "env:={}".format(self._current_level),
+            "cfg:={}".format(Path(self._env_cfg).resolve()),
+        ]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
         self._roslaunch.start()

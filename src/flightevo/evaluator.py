@@ -35,6 +35,7 @@ class Evaluator:
         self._generator = iter(self._genomes.items())
         self._current_name = None
         self._current_genome = None
+        self._env_cfg = env_cfg
         with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Dodger(
@@ -106,7 +107,10 @@ class Evaluator:
         except StopIteration:
             rospy.signal_shutdown("No more environments!")
             raise
-        args = ["env:={}".format(self._current_level)]
+        args = [
+            "env:={}".format(self._current_level),
+            "cfg:={}".format(Path(self._env_cfg).resolve()),
+        ]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
         self._roslaunch.start()
@@ -220,7 +224,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoint", default="")
     parser.add_argument(
-        "--agent", default="logs/paper/winner.pickle")
+        "--agent", default="logs/paper/member-4.pickle")
     args = parser.parse_args()
     if args.checkpoint:
         pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
