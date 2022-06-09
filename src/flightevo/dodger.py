@@ -14,7 +14,7 @@ class Dodger:
     BORDER = 0
 
     def __init__(self, resolution_width, resolution_height,
-                 speed_x, speed_y, speed_z, bounds, gamma, acc):
+                 speed_x, speed_y, speed_z, bounds, gamma, acc, margin):
         self._resolution_width = resolution_width
         self._resolution_height = resolution_height
         self._mlp = None
@@ -29,6 +29,7 @@ class Dodger:
         self._gamma = gamma
         self._bounds = bounds  # min_y, max_y, min_z, max_z
         self._acc = acc
+        self._margin = margin
 
     def load(self, cppn):
         del self._mlp
@@ -46,24 +47,18 @@ class Dodger:
 
     def _transform_activations(self, a, state):
         # a: up, right, down, left, center
-        # if state.pos[1] < self._bounds[0] + 1:  # avoid right
-        #     a[1] = -float("inf")
-        # if state.pos[1] > self._bounds[1] - 1:  # avoid left
-        #     a[3] = -float("inf")
-        # if state.pos[2] < self._bounds[2] + 1:  # avoid down
-        #     a[2] = -float("inf")
-        # if state.pos[2] > self._bounds[3] - 1:  # avoid up
-        #     a[0] = -float("inf")
+        if state.pos[1] < self._bounds[0] + self._margin:  # avoid right
+            a[1] = -float("inf")
+        if state.pos[1] > self._bounds[1] - self._margin:  # avoid left
+            a[3] = -float("inf")
+        if state.pos[2] < self._bounds[2] + self._margin:  # avoid down
+            a[2] = -float("inf")
+        if state.pos[2] > self._bounds[3] - self._margin:  # avoid up
+            a[0] = -float("inf")
 
         vy, vz = 0, 0
         vx = min(self._speed_x, state.vel[0] + self._acc)
-        # if state.pos[0] < 3.:
-        #     vx *= .5
         index = a.argmax().item()
-
-        # self._speed_x, self._speed_y, self._speed_z = 1.4, 1.4, 1.4
-        # vx = self._speed_x
-        # index = random.randint(0, 4)
         if index == 0:  # up
             vz = self._speed_z
         elif index == 1:  # right
@@ -72,19 +67,6 @@ class Dodger:
             vz = -self._speed_z
         elif index == 3:  # left
             vy = self._speed_y
-        # elif index == 4:  # center
-        #     vx = 2.
-
-        # if a[0] > a[2]:
-        #     vz = a[0].item() * self._speed_z
-        # else:
-        #     vz = -a[2].item() * self._speed_z
-        # if a[1] > a[3]:
-        #     vy = -a[1].item() * self._speed_y
-        # else:
-        #     vy = a[3].item() * self._speed_y
-        # vx = a[4].item() * self._speed_x
-
         return [vx, vy, vz]
 
     def _transform_state(self, state):
@@ -107,12 +89,6 @@ class Dodger:
     def _get_coords(self):
         r = 10
 
-        # state = [
-        #     (0, r * 2, ),  # up
-        #     (r * 2, 0, ),  # right
-        #     (0, -r * 2, ),  # down
-        #     (-r * 2, 0, ),  # left
-        # ]
         img = self._get_grid(
             self._resolution_width + self.BORDER * 2,
             self._resolution_height + self.BORDER * 2,
@@ -122,13 +98,9 @@ class Dodger:
 
         outputs = [
             (0, r, ),  # up
-            # (r, r, ),  # upper right
             (r, 0, ),  # right
-            # (r, -r, ),  # lower right
             (0, -r, ),  # down
-            # (-r, -r, ),  # lower left
             (-r, 0, ),  # left
-            # (-r, r, ),  # upper left
             (0, 0, ),  # center
         ]
 
@@ -165,17 +137,6 @@ class Dodger:
         new_img[-bh:, :].clamp_(1 - down / 100)
         new_img[:, :bw].clamp_(1 - left / 100)
         new_img[:, -bw:].clamp_(1 - right / 100)
-
-        # h, w, b = self._resolution_height, self._resolution_width, self.BORDE
-        # new_img = torch.hstack((
-        #     torch.full((h + 2 * b, b), 1 - left / 100),
-        #     torch.vstack((
-        #         torch.full((b, w), 1 - up / 100),
-        #         new_img,
-        #         torch.full((b, w), 1 - down / 100),
-        #     )),
-        #     torch.full((h + 2 * b, b), 1 - right / 100),
-        # ))
 
         # non-linear scaling
         new_img.pow_(self._gamma)

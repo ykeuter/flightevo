@@ -46,6 +46,7 @@ class Evaluator:
             speed_z=config["dodger"]["speed_z"],
             gamma=config["dodger"]["gamma"],
             acc=config["dodger"]["acc"],
+            margin=config["dodger"]["margin"],
             bounds=config['environment']['world_box'][2:],
         )
         self._xmax = config['environment']['target']
