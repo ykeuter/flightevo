@@ -204,6 +204,9 @@ class DodgeTrainer:
             # print("oob")
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
+        if msg.pose.position.x >= self._xmax:
+            # print("success")
+            return self._reset()
         self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):

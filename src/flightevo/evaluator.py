@@ -223,9 +223,11 @@ if __name__ == "__main__":
     parser.add_argument("--dir", default="logs/paper")
     parser.add_argument("--env", default="logs/paper/env.yaml")
     parser.add_argument(
+        # "--checkpoint", default="logs/paper/checkpoint-320")
         "--checkpoint", default="")
     parser.add_argument(
-        "--agent", default="logs/paper/member-4.pickle")
+        "--agent", default="logs/paper/member-4-rt.pickle")
+    # "--agent", default="")
     args = parser.parse_args()
     if args.checkpoint:
         pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
