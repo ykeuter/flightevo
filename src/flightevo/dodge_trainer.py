@@ -94,7 +94,8 @@ class DodgeTrainer:
         else:
             r = config["environment"]["env_range"]
             self._levels = (
-                "environment_{}".format(i) for i in range(r[0], r[1])
+                "environment_{}".format(i)
+                for i in random.sample(range(r[0], r[1]), r[1] - r[0])
             )
         self._current_level = None
 
@@ -243,7 +244,7 @@ class DodgeTrainer:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--winner", default="")
-    parser.add_argument("--checkpoint", default="logs/fvit3r2v/checkpoint-320")
+    parser.add_argument("--checkpoint", default="")
     parser.add_argument("--neat", default="cfg/neat.cfg")
     parser.add_argument("--env", default="cfg/env.yaml")
     parser.add_argument("--log", default="logs/" + "".join(
