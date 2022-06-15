@@ -29,8 +29,8 @@ from flightevo.genome import Genome
 
 
 class Evaluator:
-    def __init__(self, genomes, log_dir, env_cfg):
-        self._filename = Path(log_dir) / "stats.csv"
+    def __init__(self, genomes, fn, env_cfg):
+        self._filename = fn
         self._genomes = genomes
         self._generator = iter(self._genomes.items())
         self._current_name = None
@@ -220,13 +220,13 @@ class Evaluator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/paper")
+    parser.add_argument("--out", default="logs/paper/stats.csv")
     parser.add_argument("--env", default="logs/paper/env.yaml")
     parser.add_argument(
-        # "--checkpoint", default="logs/paper/checkpoint-320")
+        # "--checkpoint", default="logs/paper/checkpoint-257-medium")
         "--checkpoint", default="")
     parser.add_argument(
-        "--agent", default="logs/paper/member-4-rt.pickle")
+        "--agent", default="logs/paper/member-4-winner.pickle")
     # "--agent", default="")
     args = parser.parse_args()
     if args.checkpoint:
@@ -241,5 +241,5 @@ if __name__ == "__main__":
         with open(p, "rb") as f:
             genomes = {p.stem: pickle.load(f)}
     rospy.init_node('evaluator', anonymous=False)
-    e = Evaluator(genomes, args.dir, args.env)
+    e = Evaluator(genomes, Path(args.out), args.env)
     e.run()

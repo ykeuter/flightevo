@@ -129,3 +129,9 @@ continue with speed=4.
 
 # f6psb37l
 continue with speed=4.5. failed to finish.
+
+# 86s6bv6b
+from scratch on medium.
+
+# 2gr0dkay
+from scratch on medium. max criterion. take winner.
