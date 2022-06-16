@@ -226,8 +226,8 @@ if __name__ == "__main__":
         # "--checkpoint", default="logs/paper/checkpoint-257-medium")
         "--checkpoint", default="")
     parser.add_argument(
-        "--agent", default="logs/paper/member-4-winner.pickle")
-    # "--agent", default="")
+        # "--agent", default="logs/paper/member-4-winner.pickle")
+        "--agent", default="")
     args = parser.parse_args()
     if args.checkpoint:
         pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)

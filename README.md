@@ -135,3 +135,6 @@ from scratch on medium.
 
 # 2gr0dkay
 from scratch on medium. max criterion. take winner.
+
+# bigrun
+shuffling the order of envs.
