@@ -141,3 +141,6 @@ shuffling the order of envs.
 
 # bigrun-2
 sampling envs for training.
+
+# bigrun-3
+shuffling the order of envs. 1 generation per env.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR="logs/bigrun-2"
+DIR="logs/bigrun-3"
 
 for i in {0..19}
 do

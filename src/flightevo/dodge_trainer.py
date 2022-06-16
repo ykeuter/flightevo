@@ -93,10 +93,10 @@ class DodgeTrainer:
             self._levels = repeat(config["environment"]["env_folder"])
         else:
             r = config["environment"]["env_range"]
-            self._levels = [
+            self._levels = (
                 "environment_{}".format(i)
-                for i in range(r[0], r[1])
-            ]
+                for i in random.sample(range(r[0], r[1]), r[1] - r[0])
+            )
         self._current_level = None
 
     def run(self):
@@ -133,8 +133,8 @@ class DodgeTrainer:
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
         try:
-            # self._current_level = next(self._levels)
-            self._current_level = random.choice(self._levels)
+            self._current_level = next(self._levels)
+            # self._current_level = random.choice(self._levels)
         except StopIteration:
             rospy.signal_shutdown("No more environments!")
             raise
