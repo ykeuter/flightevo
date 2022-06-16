@@ -138,3 +138,6 @@ from scratch on medium. max criterion. take winner.
 
 # bigrun
 shuffling the order of envs.
+
+# bigrun-2
+sampling envs for training.
