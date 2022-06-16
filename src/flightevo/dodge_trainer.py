@@ -60,7 +60,7 @@ class DodgeTrainer:
             pop.add_reporter(CsvReporter(Path(log_dir)))
             self._winner_reporter = WinnerReporter(Path(log_dir))
             pop.add_reporter(self._winner_reporter)
-            # pop.add_reporter(FunctionReporter(self._level_up))
+            pop.add_reporter(FunctionReporter(self._level_up))
             self._generator = iter(pop)
             self._population = pop
         self._current_genome = None
@@ -93,10 +93,10 @@ class DodgeTrainer:
             self._levels = repeat(config["environment"]["env_folder"])
         else:
             r = config["environment"]["env_range"]
-            self._levels = (
+            self._levels = [
                 "environment_{}".format(i)
-                for i in random.sample(range(r[0], r[1]), r[1] - r[0])
-            )
+                for i in range(r[0], r[1])
+            ]
         self._current_level = None
 
     def run(self):
@@ -133,7 +133,8 @@ class DodgeTrainer:
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
         try:
-            self._current_level = next(self._levels)
+            # self._current_level = next(self._levels)
+            self._current_level = random.choice(self._levels)
         except StopIteration:
             rospy.signal_shutdown("No more environments!")
             raise
@@ -157,10 +158,12 @@ class DodgeTrainer:
             rospy.signal_shutdown("No more genomes!")
             raise
         except StopIteration:
-            self._winner_reporter.reset(self._current_level)
-            self._generator = iter(self._population)
-            self._current_genome = next(self._generator)
-            self._level_up()
+            rospy.signal_shutdown("Found solution!")
+            raise
+            # self._winner_reporter.reset(self._current_level)
+            # self._generator = iter(self._population)
+            # self._current_genome = next(self._generator)
+            # self._level_up()
         self._current_genome.fitness = 0
         with self._lock:
             self._dodger.load(self._current_genome)
