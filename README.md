@@ -144,3 +144,7 @@ sampling envs for training.
 
 # bigrun-3
 shuffling the order of envs. 1 generation per env.
+
+# bigrun-4
+shuffling the order of  med envs. 1 generation per env. pop size 64. no center node.
+res 30x40

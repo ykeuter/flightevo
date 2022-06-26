@@ -220,13 +220,13 @@ class Evaluator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default="logs/paper/stats.csv")
-    parser.add_argument("--env", default="logs/paper/env.yaml")
+    parser.add_argument("--out", default="logs/winner/evaluation-stats.csv")
+    parser.add_argument("--env", default="logs/winner/env-evaluation.yaml")
     parser.add_argument(
         # "--checkpoint", default="logs/paper/checkpoint-257-medium")
         "--checkpoint", default="")
     parser.add_argument(
-        # "--agent", default="logs/paper/member-4-winner.pickle")
+        # "--agent", default="logs/winner/member-4-winner.pickle")
         "--agent", default="")
     args = parser.parse_args()
     if args.checkpoint:
