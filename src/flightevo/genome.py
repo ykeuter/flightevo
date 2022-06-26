@@ -65,26 +65,26 @@ class Genome:
 
     def _add_node(self, config):
         node_id = next(config.node_indexer)
-        r = random()
-        if r < .5:
-            n = ZoomedGaussGene(node_id)
-            self.nodes[node_id] = n
+        # r = random()
+        # if r < .5:
+        n = ZoomedGaussGene(node_id)
+        self.nodes[node_id] = n
         # elif r < .66:
         #     n = ZoomedGaussGene(node_id)
         #     self.vertical_nodes[node_id] = n
-        else:
-            n = GaussGene(node_id)
-            self.center_nodes[node_id] = n
+        # else:
+        #     n = GaussGene(node_id)
+        #     self.center_nodes[node_id] = n
         n.init_attributes(config)
 
     def _delete_node(self):
-        r = random()
-        if r < .5:
-            d = self.nodes
+        # r = random()
+        # if r < .5:
+        d = self.nodes
         # elif r < .66:
         #     d = self.vertical_nodes
-        else:
-            d = self.center_nodes
+        # else:
+        #     d = self.center_nodes
         if d:
             key = choice(list(d.keys()))
             del d[key]
