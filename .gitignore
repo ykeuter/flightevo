@@ -3,6 +3,5 @@ __pycache__/
 logs/*/
 .vscode/
 .env
-sandbox*.py
 *.pickle
 run_competition.py
