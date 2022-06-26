@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR="logs/$1"
+DIR=$1
 
 for i in {0..19}
 do
