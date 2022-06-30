@@ -158,18 +158,13 @@ class Evaluator:
             return
         if self._crashed:
             print("crashed")
-            self._current_genome.fitness = self._timeout
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
             print("timeout")
-            self._current_genome.fitness = self._timeout
-            return self._reset()
-        if msg.pose.position.x >= self._xmax:
-            print("success")
-            t = msg.t - self._start_time
-            self._current_genome.fitness = t
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -182,9 +177,14 @@ class Evaluator:
             (pos >= self._bounding_box[:, 1])
         ).any():
             print("oob")
-            self._current_genome.fitness = self._timeout
+            # self._current_genome.fitness = self._timeout
             return self._reset()
-        # self._current_genome.fitness = msg.pose.position.x
+        self._current_genome.fitness = msg.pose.position.x
+        if msg.pose.position.x >= self._xmax:
+            print("success")
+            # t = msg.t - self._start_time
+            # self._current_genome.fitness = t
+            return self._reset()
         self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):

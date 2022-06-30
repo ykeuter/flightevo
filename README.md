@@ -147,4 +147,16 @@ shuffling the order of envs. 1 generation per env.
 
 # bigrun-4
 shuffling the order of  med envs. 1 generation per env. pop size 64. no center node.
+res 16x16
+
+# bigrun-5
+shuffling the order of  med envs. 1 generation per env. pop size 20. no center node.
 res 30x40
+
+# bigrun-6
+shuffling the order of  hard envs. 1 generation per env. pop size 20. no center node.
+res 16x16
+
+# bigrun-7
+shuffling the order of  hard envs. 1 generation per env. pop size 20. no center node.
+res 16x16. select and eval in hard with fitness function.
