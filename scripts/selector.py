@@ -14,7 +14,7 @@ df = pd.read_csv(fn, names=["environment", "agent", "time"])
 print(df)
 agg = df.groupby("agent")["time"].mean()
 print(agg)
-winner = agg.idxmin()
+winner = agg.idxmax()
 cp, i = winner.rsplit("-", 1)
 print(cp, i)
 cp_fn = fn.parent / cp
