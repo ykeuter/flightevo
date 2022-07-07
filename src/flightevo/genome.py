@@ -1,6 +1,6 @@
 from tkinter.messagebox import NO
 from neat.config import DefaultClassConfig, ConfigParameter
-from random import random, choice
+from random import random, choice, sample
 from neat.genes import BaseGene
 from neat.attributes import FloatAttribute
 from itertools import count
@@ -33,6 +33,7 @@ class Config(DefaultClassConfig):
         param_list = [
             ConfigParameter('node_add_prob', float),
             ConfigParameter('node_delete_prob', float),
+            ConfigParameter('node_num_init', int, 1)
         ]
         param_list += \
             ZoomedGaussGene.get_config_params() + BiasGene.get_config_params()
@@ -91,7 +92,8 @@ class Genome:
 
     def configure_new(self, config):
         """Configure a new genome based on the given configuration."""
-        self._add_node(config)
+        for _ in range(config.node_num_init):
+            self._add_node(config)
         self.vertical_bias = BiasGene(-1)
         self.vertical_bias.init_attributes(config)
         self.horizontal_bias = BiasGene(-2)
@@ -109,10 +111,11 @@ class Genome:
             keys2 = set(nodes2)
             for k in (keys1 & keys2):
                 nodes0[k] = nodes1[k].crossover(nodes2[k])
-            for k in (keys1 ^ keys2):
-                if random() < .5:
-                    n = nodes1.get(k, nodes2.get(k))
-                    nodes0[k] = n.copy()
+            num = int((len(nodes1) + len(nodes2)) / 2) - len(nodes0)
+            for k in sample(keys1 ^ keys2, num):
+                # if random() < .5:
+                n = nodes1.get(k, nodes2.get(k))
+                nodes0[k] = n.copy()
         for name in ("vertical_bias", "horizontal_bias", "center_bias"):
             setattr(
                 self,
