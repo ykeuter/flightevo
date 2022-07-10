@@ -160,3 +160,9 @@ res 16x16
 # bigrun-7
 shuffling the order of  hard envs. 1 generation per env. pop size 20. no center node.
 res 16x16. select and eval in hard with fitness function.
+
+# bigrun-8
+fix nodes to 2.
+
+# bigrun-9
+run 100 gens.
