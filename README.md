@@ -169,3 +169,6 @@ run 100 gens.
 
 # bigrun-10
 bigrun-7 with fitness results.
+
+# bigrun-11
+fix nodes to 1 only.
