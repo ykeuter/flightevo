@@ -8,7 +8,7 @@ do
   env="$DIR/env-training.yaml"
   neat="$DIR/neat.cfg"
   log="$DIR/run-$i"
-  if [[ -f "$env"]]
+  if [[ -f "$env" ]]
   then
     python -m flightevo.dodge_trainer --neat $neat --env $env --log $log
   fi
@@ -16,7 +16,7 @@ do
   out="$log/selection-stats.csv"
   env="$DIR/env-selection.yaml"
   checkpoint="$(ls $log/checkpoint-* | sort -Vr | head -1)"
-  if [[ -f "$env"]]
+  if [[ -f "$env" ]]
   then
     python -m flightevo.evaluator --out $out --env $env --checkpoint $checkpoint
     # selection
@@ -26,7 +26,7 @@ do
   out="$DIR/evaluation-stats.csv"
   env="$DIR/env-evaluation.yaml"
   agent="$(ls $log/run-$i-checkpoint-*.pickle)"
-  if [[ -f "$env"]]
+  if [[ -f "$env" ]]
   then
     python -m flightevo.evaluator --out $out --env $env --agent $agent
   fi
