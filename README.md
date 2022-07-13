@@ -166,3 +166,6 @@ fix nodes to 2.
 
 # bigrun-9
 run 100 gens.
+
+# bigrun-10
+bigrun-7 with fitness results.
