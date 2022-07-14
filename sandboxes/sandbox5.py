@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 
-DIR = Path("logs/bigrun-5")
+DIR = Path("logs/bigrun-11")
 
 dfs = []
 for d in DIR.iterdir():
