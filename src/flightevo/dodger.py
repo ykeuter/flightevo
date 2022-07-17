@@ -3,8 +3,8 @@ import cv2
 import random
 import rospy
 import torch
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+# from sensor_msgs.msg import Image
+# from cv_bridge import CvBridge
 
 from flightevo.mlp2d import Mlp2D
 from flightevo.utils import AgileCommand
@@ -20,9 +20,9 @@ class Dodger:
         self._mlp = None
         self._device = "cpu"
         self._coords = self._get_coords()
-        self._img_pub = rospy.Publisher(
-            "/kingfisher/dodger/depth", Image, queue_size=1)
-        self._cv_bridge = CvBridge()
+        # self._img_pub = rospy.Publisher(
+        #     "/kingfisher/dodger/depth", Image, queue_size=1)
+        # self._cv_bridge = CvBridge()
         self._speed_x = speed_x
         self._speed_y = speed_y
         self._speed_z = speed_z
@@ -141,7 +141,7 @@ class Dodger:
         # non-linear scaling
         new_img.pow_(self._gamma)
 
-        msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
-        self._img_pub.publish(msg)
+        # msg = self._cv_bridge.cv2_to_imgmsg(new_img.numpy())
+        # self._img_pub.publish(msg)
 
         return new_img.view(-1)
