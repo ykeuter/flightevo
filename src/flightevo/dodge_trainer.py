@@ -29,7 +29,9 @@ from flightevo.genome import Genome
 
 
 class DodgeTrainer:
-    def __init__(self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint):
+    def __init__(
+        self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint, seed=None
+    ):
         self._neat_config = neat.Config(
             Genome,
             neat.DefaultReproduction,
@@ -93,9 +95,10 @@ class DodgeTrainer:
             self._levels = repeat(config["environment"]["env_folder"])
         else:
             r = config["environment"]["env_range"]
+            rng = random.Random(seed)
             self._levels = (
                 "environment_{}".format(i)
-                for i in random.sample(range(r[0], r[1]), r[1] - r[0])
+                for i in rng.sample(range(r[0], r[1]), r[1] - r[0])
             )
         self._current_level = None
 
@@ -254,8 +257,9 @@ if __name__ == "__main__":
         random.choice(string.ascii_lowercase + string.digits)
         for _ in range(8)
     ))
+    parser.add_argument("--seed", type=int)
     args = parser.parse_args()
     rospy.init_node('dodge_trainer', anonymous=False)
     t = DodgeTrainer(args.env, args.neat, args.log,
-                     args.winner, args.checkpoint)
+                     args.winner, args.checkpoint, args.seed)
     t.run()

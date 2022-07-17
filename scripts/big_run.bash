@@ -10,7 +10,7 @@ do
   log="$DIR/run-$i"
   if [[ -f "$env" ]]
   then
-    python -m flightevo.dodge_trainer --neat $neat --env $env --log $log
+    python -m flightevo.dodge_trainer --neat $neat --env $env --log $log --seed $i
   fi
   # evaluation for selection
   out="$log/selection-stats.csv"
