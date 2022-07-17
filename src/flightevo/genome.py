@@ -78,6 +78,12 @@ class Genome:
         #     self.center_nodes[node_id] = n
         n.init_attributes(config)
 
+    def _copy_node(self, config):
+        key = next(config.node_indexer)
+        node = choice(list(self.nodes.values())).copy()
+        node.key = key
+        self.nodes[key] = node
+
     def _delete_node(self):
         # r = random()
         # if r < .5:
@@ -86,7 +92,7 @@ class Genome:
         #     d = self.vertical_nodes
         # else:
         #     d = self.center_nodes
-        if d:
+        if len(d) > 1:
             key = choice(list(d.keys()))
             del d[key]
 
@@ -125,6 +131,11 @@ class Genome:
 
     def mutate(self, config):
         """ Mutates this genome. """
+        # Add and delete nodes.
+        if random() < config.node_add_prob:
+            self._copy_node(config)
+        if random() < config.node_delete_prob:
+            self._delete_node()
         # Mutate genes.
         for g in (
             list(self.vertical_nodes.values()) +
@@ -133,11 +144,6 @@ class Genome:
             [self.vertical_bias, self.horizontal_bias, self.center_bias]
         ):
             g.mutate(config)
-
-        if random() < config.node_add_prob:
-            self._add_node(config)
-        if random() < config.node_delete_prob:
-            self._delete_node()
 
     def distance(self, other, config):
         """
