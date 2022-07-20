@@ -178,3 +178,9 @@ fix nodes to 3 only.
 
 # bigrun-13
 flex nodes. seed shuffling. fix weight and scale. positive zoom only. duplicate receptive field.
+
+# bigrun-14
+fix 1 node. seed shuffling. fix weight and scale. positive zoom only.
+
+# bigrun-15
+fix 2 node. seed shuffling. fix weight and scale. positive zoom only.
