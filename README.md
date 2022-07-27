@@ -184,3 +184,13 @@ fix 1 node. seed shuffling. fix weight and scale. positive zoom only.
 
 # bigrun-15
 fix 2 node. seed shuffling. fix weight and scale. positive zoom only.
+
+# bigrun-16
+fix nodes to 1 only. evolve scale (and weight). zoom positive and negative.
+copy of bigrun-11 but with seeded shuffling now.
+
+# bigrun-17
+fix nodes to 2 only. evolve scale (and weight). zoom positive and negative.
+
+# bigrun-18
+flex nodes. evolve scale (and weight). zoom positive and negative. not duplicating but adding new nodes.

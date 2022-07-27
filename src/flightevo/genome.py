@@ -133,7 +133,8 @@ class Genome:
         """ Mutates this genome. """
         # Add and delete nodes.
         if random() < config.node_add_prob:
-            self._copy_node(config)
+            # self._copy_node(config)
+            self._add_node(config)
         if random() < config.node_delete_prob:
             self._delete_node()
         # Mutate genes.
