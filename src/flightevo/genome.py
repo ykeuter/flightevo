@@ -1,9 +1,9 @@
-from tkinter.messagebox import NO
 from neat.config import DefaultClassConfig, ConfigParameter
 from random import random, choice, sample
 from neat.genes import BaseGene
 from neat.attributes import FloatAttribute
 from itertools import count
+from math import ceil
 
 
 class ZoomedGaussGene(BaseGene):
@@ -117,7 +117,7 @@ class Genome:
             keys2 = set(nodes2)
             for k in (keys1 & keys2):
                 nodes0[k] = nodes1[k].crossover(nodes2[k])
-            num = int((len(nodes1) + len(nodes2)) / 2) - len(nodes0)
+            num = ceil((len(nodes1) + len(nodes2)) / 2) - len(nodes0)
             for k in sample(keys1 ^ keys2, num):
                 # if random() < .5:
                 n = nodes1.get(k, nodes2.get(k))
