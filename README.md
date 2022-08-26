@@ -194,3 +194,16 @@ fix nodes to 2 only. evolve scale (and weight). zoom positive and negative.
 
 # bigrun-18
 flex nodes. evolve scale (and weight). zoom positive and negative. not duplicating but adding new nodes.
+
+# bigrun-19
+flex nodes. evolve scale (and weight). zoom positive and negative. not duplicating but adding new nodes.
+bigrun-18 but with tendency to more nodes (due to fix of rounding down at crossover).
+
+# bigrun-20
+fix 2 nodes with only positive zoom.
+
+# bigrun-21
+flex with only positive zoom.
+
+# bigrun-22
+fix 1 node with only positive zoom.
