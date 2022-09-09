@@ -207,3 +207,6 @@ flex with only positive zoom.
 
 # bigrun-22
 fix 1 node with only positive zoom.
+
+# bigrun-23
+fix 1 node with only negative zoom.

@@ -231,9 +231,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.checkpoint:
         pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
-        prefix = Path(args.checkpoint).stem
+        cp = Path(args.checkpoint).stem
+        parent = Path(args.checkpoint).parent.name
         genomes = {
-            "{}-{}".format(prefix, i): v
+            "{}-{}-{}".format(parent, cp, i): v
             for i, v in enumerate(pop.population.values())
         }
     if args.agent:
