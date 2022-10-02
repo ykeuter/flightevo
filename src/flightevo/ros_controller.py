@@ -58,8 +58,8 @@ class Controller:
         )
         if self.net:
             euler_x, euler_y, euler_z = utils.quaternion_to_euler(
-                msg.pose.orientation.x, msg.pose.orientation.y,
-                msg.pose.orientation.z, msg.pose.orientation.w
+                msg.pose.orientation.w, msg.pose.orientation.x,
+                msg.pose.orientation.y, msg.pose.orientation.z
             )
             x = np.array([
                 msg.pose.position.x, -msg.pose.position.x,

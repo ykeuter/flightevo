@@ -109,8 +109,8 @@ class Trainer:
         r += np.inner(d, d) * self.POS_COEFF
 
         d = np.array(utils.quaternion_to_euler(
-            s.pose.orientation.x, s.pose.orientation.y, s.pose.orientation.z,
-            s.pose.orientation.w
+            s.pose.orientation.w,
+            s.pose.orientation.x, s.pose.orientation.y, s.pose.orientation.z
         ))
         r += np.inner(d, d) * self.ORI_COEFF
 

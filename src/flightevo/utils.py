@@ -75,7 +75,7 @@ class AgileQuadState:
         return repr_str
 
 
-def quaternion_to_euler(x, y, z, w):
+def quaternion_to_euler(w, x, y, z):
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll = math.atan2(t0, t1)
