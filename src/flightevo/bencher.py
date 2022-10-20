@@ -14,13 +14,14 @@ class Bencher(Dodger):
         super().__init__(resolution_width, resolution_height,
                          speed_x, speed_y, speed_z, bounds, gamma, acc, margin)
 
-    def set_target(self, x, y, z):
-        self._target = np.array([x, y, z], dtype=np.float32)
+    def set_target(self, t):
+        self._target = t
 
     def compute_command_vision_based(self, state, img):
         # s = self._transform_state(state)
         i = self._transform_img(img, state)
         a = self._mlp.activate(i)
+        a = np.array([0, 0, 0, 0, 1])  # always go fwd
         v = self._transform_activations(a, state)
         v = self._adjust_z(v, state)
         yawrate = self._adjust_yaw(state)
@@ -59,7 +60,8 @@ class Bencher(Dodger):
             a[0] = -float("inf")
 
         vy, vz = 0, 0
-        vx = min(self._speed_x, state.vel[0] + self._acc)
+
+        vx = self._speed_x
         index = a.argmax().item()
         if index == 0:  # up
             vz = self._speed_z
@@ -70,7 +72,14 @@ class Bencher(Dodger):
         elif index == 3:  # left
             vy = self._speed_y
 
-        vq = np.quaternion(0, vx, vy, vz)
         rq = np.quaternion(*state.att)
-        v = np.conjugate(rq) * vq * rq
-        return [*v.imag]
+        yq = np.quaternion(0, 0, 1, 0)
+        y = rq * yq * np.conjugate(rq)
+        y = y.imag * np.array([1, 1, 0])
+        y /= np.linalg.norm(y)
+        xq = np.quaternion(0, 1, 0, 0)
+        x = rq * xq * np.conjugate(rq)
+        x = x.imag * np.array([1, 1, 0])
+        x /= np.linalg.norm(x)
+        vxy = vx * x + vy * y
+        return [vxy[0], vxy[1], vz]
