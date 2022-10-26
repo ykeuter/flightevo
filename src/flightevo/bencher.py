@@ -21,7 +21,8 @@ class Bencher(Dodger):
         # s = self._transform_state(state)
         i = self._transform_img(img, state)
         a = self._mlp.activate(i)
-        a = np.array([0, 0, 0, 0, 1])  # always go fwd
+        # always go fwd
+        # a = np.array([0, 0, 0, 0, 1])
         v = self._transform_activations(a, state)
         v = self._adjust_z(v, state)
         yawrate = self._adjust_yaw(state)

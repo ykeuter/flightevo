@@ -214,9 +214,12 @@ class BenchTrainer:
         ).any():
             print("oob")
             return self._reset()
-        self._current_genome.fitness = msg.pose.position.x
+        d = np.linalg.norm(pos - self._target)
+        # self._current_genome.fitness = msg.pose.position.x
+        self._current_genome.fitness = max(self._current_genome.fitness,
+                                           100 - d)
         # if msg.pose.position.x >= self._xmax:
-        if np.linalg.norm(pos - self._target) <= 1.:
+        if d <= 1.:
             print("success")
             return self._reset()
         self._state = AgileQuadState(msg)
