@@ -16,7 +16,6 @@ agg = df.groupby("agent")["time"].mean()
 print(agg)
 winner = agg.idxmax()
 cp, i = winner.rsplit("-", 1)
-d, cp = cp.split("-", 1)
 print(cp, i)
 cp_fn = fn.parent / cp
 agents = list(neat.Checkpointer.restore_checkpoint(cp_fn).population.values())

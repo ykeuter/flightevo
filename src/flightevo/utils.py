@@ -49,21 +49,21 @@ class AgileCommand:
 
 class AgileQuadState:
     def __init__(self, quad_state):
-        self.t = quad_state.t
+        self.t = quad_state.header.stamp.to_sec()
 
-        self.pos = np.array([quad_state.pose.position.x,
-                             quad_state.pose.position.y,
-                             quad_state.pose.position.z], dtype=np.float32)
-        self.att = np.array([quad_state.pose.orientation.w,
-                             quad_state.pose.orientation.x,
-                             quad_state.pose.orientation.y,
-                             quad_state.pose.orientation.z], dtype=np.float32)
-        self.vel = np.array([quad_state.velocity.linear.x,
-                             quad_state.velocity.linear.y,
-                             quad_state.velocity.linear.z], dtype=np.float32)
-        self.omega = np.array([quad_state.velocity.angular.x,
-                               quad_state.velocity.angular.y,
-                               quad_state.velocity.angular.z], dtype=np.float32)
+        self.pos = np.array([quad_state.pose.pose.position.x,
+                             quad_state.pose.pose.position.y,
+                             quad_state.pose.pose.position.z], dtype=np.float32)
+        self.att = np.array([quad_state.pose.pose.orientation.w,
+                             quad_state.pose.pose.orientation.x,
+                             quad_state.pose.pose.orientation.y,
+                             quad_state.pose.pose.orientation.z], dtype=np.float32)
+        self.vel = np.array([quad_state.twist.twist.linear.x,
+                             quad_state.twist.twist.linear.y,
+                             quad_state.twist.twist.linear.z], dtype=np.float32)
+        self.omega = np.array([quad_state.twist.twist.angular.x,
+                               quad_state.twist.twist.angular.y,
+                               quad_state.twist.twist.angular.z], dtype=np.float32)
 
     def __repr__(self):
         repr_str = "AgileQuadState:\n" \
