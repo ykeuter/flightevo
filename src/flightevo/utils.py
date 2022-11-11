@@ -7,6 +7,7 @@ import neat
 import argparse
 from pathlib import Path
 import numpy as np
+from dodgeros_msgs.msg import QuadState
 
 
 class AgileCommandMode(object):
@@ -50,20 +51,26 @@ class AgileCommand:
 class AgileQuadState:
     def __init__(self, quad_state):
         self.t = quad_state.header.stamp.to_sec()
+        if isinstance(quad_state, QuadState):
+            pose = quad_state.pose
+            twist = quad_state.velocity
+        else:
+            pose = quad_state.pose.pose
+            twist = quad_state.twist.twist
 
-        self.pos = np.array([quad_state.pose.pose.position.x,
-                             quad_state.pose.pose.position.y,
-                             quad_state.pose.pose.position.z], dtype=np.float32)
-        self.att = np.array([quad_state.pose.pose.orientation.w,
-                             quad_state.pose.pose.orientation.x,
-                             quad_state.pose.pose.orientation.y,
-                             quad_state.pose.pose.orientation.z], dtype=np.float32)
-        self.vel = np.array([quad_state.twist.twist.linear.x,
-                             quad_state.twist.twist.linear.y,
-                             quad_state.twist.twist.linear.z], dtype=np.float32)
-        self.omega = np.array([quad_state.twist.twist.angular.x,
-                               quad_state.twist.twist.angular.y,
-                               quad_state.twist.twist.angular.z], dtype=np.float32)
+        self.pos = np.array([pose.position.x,
+                             pose.position.y,
+                             pose.position.z], dtype=np.float32)
+        self.att = np.array([pose.orientation.w,
+                             pose.orientation.x,
+                             pose.orientation.y,
+                             pose.orientation.z], dtype=np.float32)
+        self.vel = np.array([twist.linear.x,
+                             twist.linear.y,
+                             twist.linear.z], dtype=np.float32)
+        self.omega = np.array([twist.angular.x,
+                               twist.angular.y,
+                               twist.angular.z], dtype=np.float32)
 
     def __repr__(self):
         repr_str = "AgileQuadState:\n" \
