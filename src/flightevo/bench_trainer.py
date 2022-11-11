@@ -103,7 +103,7 @@ class BenchTrainer:
                 for i in rng.sample(range(r[0], r[1]), r[1] - r[0])
             )
         self._current_level = None
-    
+
     def run(self):
         rospy.Subscriber(
             "/hummingbird/ground_truth/odometry",
@@ -159,6 +159,7 @@ class BenchTrainer:
     def img_callback(self, msg):
         if not self._active:
             return
+        # store state in case of reset
         s = self._state
         if s is None:
             return
@@ -185,7 +186,8 @@ class BenchTrainer:
         self._crashed = msg.data
 
     def task_callback(self, msg):
-        if (msg.Mission_state is not TaskState.PREPARING and
+        if (
+            msg.Mission_state is not TaskState.PREPARING and
             msg.Mission_state is not TaskState.UNITYSETTING and
             msg.Mission_state is not TaskState.GAZEBOSETTING
         ):
