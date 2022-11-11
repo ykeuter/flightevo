@@ -9,23 +9,24 @@ import shutil
 import pickle
 import roslaunch
 from threading import Lock
-from pathlib import Path as Pt
+from pathlib import Path
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge
-from nav_msgs.msg import Odometry, Path
+from nav_msgs.msg import Odometry, Path as PathMsg
 from ruamel.yaml import YAML
 from geometry_msgs.msg import TwistStamped
 from avoid_msgs.msg import TaskState
 from neat.csv_reporter import CsvReporter
 from neat.winner_reporter import WinnerReporter
 from neat.function_reporter import FunctionReporter
-from itertools import repeat
+from itertools import repeat, cycle
 from threading import Thread
 
 from flightevo.utils import replace_config, reset_stagnation, AgileQuadState
 from flightevo.bencher import Bencher
 from flightevo.genome import Genome
+
 
 class BenchTrainer:
     def __init__(
@@ -44,7 +45,7 @@ class BenchTrainer:
                 w = pickle.load(f)
             self._generator = repeat(w)
         else:
-            Pt(log_dir).mkdir()
+            Path(log_dir).mkdir()
             shutil.copy2(env_cfg, log_dir)
             shutil.copy2(neat_cfg, log_dir)
             if checkpoint:
@@ -55,11 +56,11 @@ class BenchTrainer:
                 pop = neat.Population(self._neat_config)
 
             pop.add_reporter(neat.Checkpointer(
-                1, None, str(Pt(log_dir) / "checkpoint-")
+                1, None, str(Path(log_dir) / "checkpoint-")
             ))
             pop.add_reporter(neat.StdOutReporter(True))
-            pop.add_reporter(CsvReporter(Pt(log_dir)))
-            self._winner_reporter = WinnerReporter(Pt(log_dir))
+            pop.add_reporter(CsvReporter(Path(log_dir)))
+            self._winner_reporter = WinnerReporter(Path(log_dir))
             pop.add_reporter(self._winner_reporter)
             pop.add_reporter(FunctionReporter(self._level_up))
             self._generator = iter(pop)
@@ -105,23 +106,25 @@ class BenchTrainer:
     
     def run(self):
         rospy.Subscriber(
-            "/hummingbird/ground_truth/odometry", Odometry, self.state_callback,
+            "/hummingbird/ground_truth/odometry",
+            Odometry, self.state_callback,
             queue_size=1, tcp_nodelay=True)
         rospy.Subscriber(
-            "/depth", Image, self.img_callback, queue_size=1, tcp_nodelay=True)
+            "/depth", Image, self.img_callback,
+            queue_size=1, tcp_nodelay=True)
         rospy.Subscriber(
-            "/hummingbird/collision", Bool, self.obstacle_callback, queue_size=1, tcp_nodelay=True)
+            "/hummingbird/collision", Bool,
+            self.obstacle_callback, queue_size=1, tcp_nodelay=True)
         rospy.Subscriber(
-            "/hummingbird/goal_point", Path, self.target_callback, queue_size=1)
+            "/hummingbird/goal_point", PathMsg, self.target_callback,
+            queue_size=1, tcp_nodelay=True)
         rospy.Subscriber(
-            "/hummingbird/task_state", TaskState, self.task_state_callback, queue_size=1, tcp_nodelay=True)
+            "/hummingbird/task_state", TaskState, self.task_callback,
+            queue_size=1, tcp_nodelay=True)
 
         self._cmd_pub = rospy.Publisher(
-            "/hummingbird/autopilot/velocity_command", TwistStamped, queue_size=1)
-
-        self._rluuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        roslaunch.configure_logging(self._rluuid)
-        # self._launch()
+            "/hummingbird/autopilot/velocity_command", TwistStamped,
+            queue_size=1)
         rospy.spin()
 
     def state_callback(self, msg):
@@ -143,9 +146,12 @@ class BenchTrainer:
         ).any():
             print("oob")
         #     return self._reset()
-        self._current_genome.fitness = msg.pose.pose.position.x
+        d = np.linalg.norm(pos - self._target)
+        # self._current_genome.fitness = msg.pose.position.x
+        self._current_genome.fitness = max(self._current_genome.fitness,
+                                           100 - d)
         # if msg.pose.position.x >= self._xmax:
-        if np.linalg.norm(pos - self._target) <= 1.:
+        if d <= 1.:
             print("success")
             # return self._reset()
         self._state = AgileQuadState(msg)
@@ -178,18 +184,19 @@ class BenchTrainer:
             return
         self._crashed = msg.data
 
-    def task_state_callback(self, msg):
+    def task_callback(self, msg):
         if (msg.Mission_state is not TaskState.PREPARING and
             msg.Mission_state is not TaskState.UNITYSETTING and
-            msg.Mission_state is not TaskState.GAZEBOSETTING):
+            msg.Mission_state is not TaskState.GAZEBOSETTING
+        ):
             self._active = True
-
 
     def target_callback(self, msg):
         self._target[0] = msg.poses[0].pose.position.x
         self._target[1] = msg.poses[0].pose.position.y
         self._target[2] = msg.poses[0].pose.position.z
         self._dodger.set_target(self._target)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
