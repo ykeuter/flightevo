@@ -28,45 +28,15 @@ from flightevo.bencher import Bencher
 from flightevo.genome import Genome
 
 
-class BenchTrainer:
-    def __init__(
-        self, env_cfg, neat_cfg, log_dir, winner_pickle, checkpoint, seed=None
-    ):
-        self._neat_config = neat.Config(
-            Genome,
-            neat.DefaultReproduction,
-            neat.DefaultSpeciesSet,
-            neat.DefaultStagnation,
-            neat_cfg,
-        )
-        self._env_cfg = env_cfg
-        if winner_pickle:
-            with open(winner_pickle, "rb") as f:
-                w = pickle.load(f)
-            self._generator = repeat(w)
-        else:
-            Path(log_dir).mkdir()
-            shutil.copy2(env_cfg, log_dir)
-            shutil.copy2(neat_cfg, log_dir)
-            if checkpoint:
-                pop = neat.Checkpointer.restore_checkpoint(checkpoint)
-                pop = replace_config(pop, self._neat_config)
-                reset_stagnation(pop)
-            else:
-                pop = neat.Population(self._neat_config)
-
-            pop.add_reporter(neat.Checkpointer(
-                1, None, str(Path(log_dir) / "checkpoint-")
-            ))
-            pop.add_reporter(neat.StdOutReporter(True))
-            pop.add_reporter(CsvReporter(Path(log_dir)))
-            self._winner_reporter = WinnerReporter(Path(log_dir))
-            pop.add_reporter(self._winner_reporter)
-            pop.add_reporter(FunctionReporter(self._level_up))
-            self._generator = iter(pop)
-            self._population = pop
+class BenchEvaluator:
+    def __init__(self, genomes, fn, env_cfg):
+        self._filename = fn
+        self._genomes = genomes
+        self._generator = iter(self._genomes.items())
+        self._current_name = None
         self._current_genome = None
-        with open(env_cfg) as f:
+        self._env_cfg = env_cfg
+        with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Bencher(
             resolution_width=config["dodger"]["resolution_width"],
@@ -99,10 +69,8 @@ class BenchTrainer:
             self._levels = repeat(config["environment"]["env_folder"])
         else:
             r = config["environment"]["env_range"]
-            rng = random.Random(seed)
             self._levels = (
-                "environment_{}".format(i)
-                for i in rng.sample(range(r[0], r[1]), r[1] - r[0])
+                "environment_{}".format(i) for i in range(r[0], r[1])
             )
         self._current_level = None
 
@@ -141,7 +109,6 @@ class BenchTrainer:
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
         try:
             self._current_level = next(self._levels)
-            # self._current_level = random.choice(self._levels)
         except StopIteration:
             rospy.signal_shutdown("No more environments!")
             raise
@@ -159,18 +126,17 @@ class BenchTrainer:
         Thread(target=self._reset_and_wait).start()
 
     def _reset_and_wait(self):
+        if self._current_genome:
+            with open(self._filename, "a") as f:
+                f.write("{},{},{}\n".format(self._current_level,
+                                            self._current_name,
+                                            self._current_genome.fitness))
         try:
-            self._current_genome = next(self._generator)
-        except neat.CompleteExtinctionException:
-            rospy.signal_shutdown("No more genomes!")
-            raise
+            self._current_name, self._current_genome = next(self._generator)
         except StopIteration:
-            rospy.signal_shutdown("Found solution!")
-            raise
-            # self._winner_reporter.reset(self._current_level)
-            # self._generator = iter(self._population)
-            # self._current_genome = next(self._generator)
-            # self._level_up()
+            self._generator = iter(self._genomes.items())
+            self._current_name, self._current_genome = next(self._generator)
+            self._level_up()
         self._current_genome.fitness = 0
         with self._lock:
             self._dodger.load(self._current_genome)
@@ -196,11 +162,13 @@ class BenchTrainer:
             return
         if self._crashed:
             print("crashed")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
             print("timeout")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -213,6 +181,7 @@ class BenchTrainer:
             (pos >= self._bounding_box[:, 1])
         ).any():
             print("oob")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         d = np.linalg.norm(pos - self._target)
         # self._current_genome.fitness = msg.pose.position.x
@@ -221,6 +190,8 @@ class BenchTrainer:
         # if msg.pose.position.x >= self._xmax:
         if d <= 1.:
             print("success")
+            # t = msg.t - self._start_time
+            # self._current_genome.fitness = t
             return self._reset()
         self._state = AgileQuadState(msg)
 
@@ -257,17 +228,27 @@ class BenchTrainer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--winner", default="")
-    parser.add_argument("--checkpoint", default="")
-    parser.add_argument("--neat", default="cfg/neat.cfg")
-    parser.add_argument("--env", default="cfg/env.yaml")
-    parser.add_argument("--log", default="logs/" + "".join(
-        random.choice(string.ascii_lowercase + string.digits)
-        for _ in range(8)
-    ))
-    parser.add_argument("--seed", type=int)
+    parser.add_argument("--out", default="logs/winner/evaluation-stats.csv")
+    parser.add_argument("--env", default="logs/winner/env-evaluation.yaml")
+    parser.add_argument(
+        # "--checkpoint", default="logs/paper/checkpoint-257-medium")
+        "--checkpoint", default="")
+    parser.add_argument(
+        # "--agent", default="logs/winner/member-4-winner.pickle")
+        "--agent", default="")
     args = parser.parse_args()
-    rospy.init_node('dodge_trainer', anonymous=False)
-    t = BenchTrainer(args.env, args.neat, args.log,
-                     args.winner, args.checkpoint, args.seed)
-    t.run()
+    if args.checkpoint:
+        pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+        cp = Path(args.checkpoint).stem
+        parent = Path(args.checkpoint).parent.name
+        genomes = {
+            "{}-{}-{}".format(parent, cp, i): v
+            for i, v in enumerate(pop.population.values())
+        }
+    if args.agent:
+        p = Path(args.agent)
+        with open(p, "rb") as f:
+            genomes = {p.stem: pickle.load(f)}
+    rospy.init_node('evaluator', anonymous=False)
+    e = BenchEvaluator(genomes, Path(args.out), args.env)
+    e.run()

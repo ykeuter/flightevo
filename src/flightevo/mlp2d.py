@@ -6,7 +6,7 @@ from pytorch_neat.activations import sigmoid_activation, identity_activation
 from pytorch_neat.aggregations import sum_aggregation
 from std_msgs.msg import (
     Float32MultiArray, MultiArrayDimension, MultiArrayLayout)
-from cppn import Cppn
+from flightevo.cppn import Cppn
 
 
 class Mlp2D:
