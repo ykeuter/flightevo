@@ -17,7 +17,7 @@ from avoid_msgs.msg import TaskState
 
 
 class DodgeTestNode:
-    def __init__(self, env_cfg):
+    def __init__(self, env_cfg, weights_pickle):
         self._state = None
         self.cv_bridge = CvBridge()
         self.depth_sub_ = rospy.Subscriber(
@@ -33,8 +33,8 @@ class DodgeTestNode:
             "/hummingbird/goal_point", Path, self.target_callback,
             queue_size=1)
         self._target = None
-        with open("best_eval.pickle", "rb") as f:
-            WEIGHTS = pickle.load(f)
+        with open(weights_pickle, "rb") as f:
+            weights = pickle.load(f)
         with open(env_cfg) as f:
             config = YAML().load(f)
 
@@ -51,7 +51,7 @@ class DodgeTestNode:
             creep_z=config["dodger"]["creep_z"],
             creep_yaw=config["dodger"]["creep_yaw"],
         )
-        self._dodger.load(WEIGHTS)
+        self._dodger.load(weights)
 
     def target_callback(self, data):
         self._target = np.zeros(3, dtype=np.float32)
@@ -83,8 +83,9 @@ class DodgeTestNode:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", default="cfg/env.yaml")
+    parser.add_argument("--env", default="env.yaml")
+    parser.add_argument("--weights", default="weights.pickle")
     args = parser.parse_args()
     rospy.init_node('DodgeTestNode', anonymous=True)
-    test = DodgeTestNode(args.env)
+    test = DodgeTestNode(args.env, args.weights)
     rospy.spin()
