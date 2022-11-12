@@ -19,25 +19,11 @@ from avoid_msgs.msg import TaskState
 class DodgeTestNode:
     def __init__(self, env_cfg, weights_pickle):
         self._state = None
-        self.cv_bridge = CvBridge()
-        self.depth_sub_ = rospy.Subscriber(
-            "/depth", Image, self.depthCallback,
-            queue_size=1, tcp_nodelay=True)
-        self.odom_sub_ = rospy.Subscriber(
-            "/hummingbird/ground_truth/odometry", Odometry, self.stateCallback,
-            queue_size=1, tcp_nodelay=True)
-        self.cmd_pub_ = rospy.Publisher(
-            "/hummingbird/autopilot/velocity_command", TwistStamped,
-            queue_size=1)
-        self.target_sub_ = rospy.Subscriber(
-            "/hummingbird/goal_point", Path, self.target_callback,
-            queue_size=1)
         self._target = None
         with open(weights_pickle, "rb") as f:
             weights = pickle.load(f)
         with open(env_cfg) as f:
             config = YAML().load(f)
-
         self._dodger = Bencher(
             resolution_width=config["dodger"]["resolution_width"],
             resolution_height=config["dodger"]["resolution_height"],
@@ -52,6 +38,20 @@ class DodgeTestNode:
             creep_yaw=config["dodger"]["creep_yaw"],
         )
         self._dodger.load(weights)
+
+        self.cv_bridge = CvBridge()
+        self.depth_sub_ = rospy.Subscriber(
+            "/depth", Image, self.depthCallback,
+            queue_size=1, tcp_nodelay=True)
+        self.odom_sub_ = rospy.Subscriber(
+            "/hummingbird/ground_truth/odometry", Odometry, self.stateCallback,
+            queue_size=1, tcp_nodelay=True)
+        self.cmd_pub_ = rospy.Publisher(
+            "/hummingbird/autopilot/velocity_command", TwistStamped,
+            queue_size=1)
+        self.target_sub_ = rospy.Subscriber(
+            "/hummingbird/goal_point", Path, self.target_callback,
+            queue_size=1)
 
     def target_callback(self, data):
         self._target = np.zeros(3, dtype=np.float32)
@@ -75,6 +75,13 @@ class DodgeTestNode:
         msg.twist.angular.x = 0.0
         msg.twist.angular.y = 0.0
         msg.twist.angular.z = command.yawrate
+        # testing
+        # msg.twist.linear.x = 0
+        # msg.twist.linear.y = 1
+        # msg.twist.linear.z = 0
+        # msg.twist.angular.x = 0.0
+        # msg.twist.angular.y = 0.0
+        # msg.twist.angular.z = .5
         self.cmd_pub_.publish(msg)
 
     def stateCallback(self, data):
