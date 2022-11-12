@@ -42,12 +42,12 @@ class Bencher(Dodger):
     def _adjust_yaw(self, state):
         t = self._target - state.pos
         rq = np.quaternion(*state.att)
-        yq = np.quaternion(0, 0, 1, 0)
-        y = rq * yq * np.conjugate(rq)
-        a = np.dot(t, y.imag)
+        xq = np.quaternion(0, 1, 0, 0)
+        x = rq * xq * np.conjugate(rq)
+        a = np.dot(t, x.imag)
         if a > 0:
-            return self._creep_yaw
-        return -self._creep_yaw
+            return -self._creep_yaw
+        return self._creep_yaw
 
     def _transform_activations(self, a, state):
         # a: up, right, down, left, center
@@ -60,18 +60,18 @@ class Bencher(Dodger):
         if state.pos[2] > self._bounds[3] - self._margin:  # avoid up
             a[0] = -float("inf")
 
-        vy, vz = 0, 0
+        vx, vz = 0, 0
 
-        vx = self._speed_x
+        vy = self._speed_y
         index = a.argmax().item()
         if index == 0:  # up
             vz = self._speed_z
         elif index == 1:  # right
-            vy = -self._speed_y
+            vx = self._speed_x
         elif index == 2:  # down
             vz = -self._speed_z
         elif index == 3:  # left
-            vy = self._speed_y
+            vx = -self._speed_x
 
         rq = np.quaternion(*state.att)
         yq = np.quaternion(0, 0, 1, 0)
