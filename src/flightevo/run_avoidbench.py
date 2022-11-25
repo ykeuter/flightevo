@@ -51,7 +51,22 @@ class DodgeTestNode:
             queue_size=1)
         self.target_sub_ = rospy.Subscriber(
             "/hummingbird/goal_point", Path, self.target_callback,
-            queue_size=1)
+            queue_size=1, tcp_nodelay=True)
+        rospy.Subscriber(
+            "/hummingbird/task_state", TaskState, self.task_callback,
+            queue_size=1, tcp_nodelay=True)
+        self._active = False
+
+    def task_callback(self, msg):
+        # print("task: {}".format(msg))
+        if (
+            msg.Mission_state is TaskState.PREPARING or
+            msg.Mission_state is TaskState.UNITYSETTING or
+            msg.Mission_state is TaskState.GAZEBOSETTING
+        ):
+            self._active = False
+        else:
+            self._active = True
 
     def target_callback(self, data):
         self._target = np.zeros(3, dtype=np.float32)
@@ -61,7 +76,7 @@ class DodgeTestNode:
         self._dodger.set_target(self._target)
 
     def depthCallback(self, data):
-        if self._state is None:
+        if self._state is None or not self._active:
             return
         cv_image = self.cv_bridge.imgmsg_to_cv2(
             data, desired_encoding='passthrough')
