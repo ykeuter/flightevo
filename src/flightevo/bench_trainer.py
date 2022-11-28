@@ -1,5 +1,4 @@
 import rospy
-import time
 import neat
 import numpy as np
 import argparse
@@ -7,8 +6,6 @@ import random
 import string
 import shutil
 import pickle
-import roslaunch
-from threading import Lock
 from pathlib import Path
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
@@ -18,10 +15,7 @@ from ruamel.yaml import YAML
 from geometry_msgs.msg import TwistStamped
 from avoid_msgs.msg import TaskState
 from neat.csv_reporter import CsvReporter
-from neat.winner_reporter import WinnerReporter
-from neat.function_reporter import FunctionReporter
-from itertools import repeat, cycle
-from threading import Thread
+from itertools import repeat
 
 from flightevo.utils import replace_config, reset_stagnation, AgileQuadState
 from flightevo.bencher import Bencher
@@ -54,15 +48,11 @@ class BenchTrainer:
                 reset_stagnation(pop)
             else:
                 pop = neat.Population(self._neat_config)
-
             pop.add_reporter(neat.Checkpointer(
                 1, None, str(Path(log_dir) / "checkpoint-")
             ))
             pop.add_reporter(neat.StdOutReporter(True))
             pop.add_reporter(CsvReporter(Path(log_dir)))
-            self._winner_reporter = WinnerReporter(Path(log_dir))
-            pop.add_reporter(self._winner_reporter)
-            pop.add_reporter(FunctionReporter(self._level_up))
             self._generator = iter(pop)
             self._population = pop
         self._current_genome = None
@@ -81,28 +71,11 @@ class BenchTrainer:
             creep_z=config["dodger"]["creep_z"],
             creep_yaw=config["dodger"]["creep_yaw"],
         )
-        self._target = None
-        self._timeout = config['environment']['timeout']
-        self._bounding_box = np.reshape(np.array(
-            config['environment']['world_box'], dtype=np.float32), (3, 2))
+        self._target = np.zeros(3, dtype=np.float32)
         self._cv_bridge = CvBridge()
         self._state = None
-        self._start_time = None
-        self._lock = Lock()
         self._crashed = False
         self._active = False
-        self._rluuid = None
-        self._roslaunch = None
-        if "env_folder" in config["environment"]:
-            self._levels = repeat(config["environment"]["env_folder"])
-        else:
-            r = config["environment"]["env_range"]
-            rng = random.Random(seed)
-            self._levels = (
-                "environment_{}".format(i)
-                for i in rng.sample(range(r[0], r[1]), r[1] - r[0])
-            )
-        self._current_level = None
 
     def run(self):
         rospy.Subscriber(
@@ -128,48 +101,29 @@ class BenchTrainer:
         rospy.spin()
 
     def state_callback(self, msg):
+        self._state = AgileQuadState(msg)
         if not self._active:
             return
         if self._crashed:
             print("crashed")
-        if self._start_time is None:
-            self._start_time = msg.header.stamp
-        if msg.t - self._start_time > self._timeout:
-            print("timeout")
-        #     return self._reset()
+            return
         pos = np.array([msg.pose.pose.position.x,
                         msg.pose.pose.position.y,
                         msg.pose.pose.position.z])
-        if (
-            (pos <= self._bounding_box[:, 0]) |
-            (pos >= self._bounding_box[:, 1])
-        ).any():
-            print("oob")
-        #     return self._reset()
+
         d = np.linalg.norm(pos - self._target)
-        # self._current_genome.fitness = msg.pose.position.x
         self._current_genome.fitness = max(self._current_genome.fitness,
                                            100 - d)
-        # if msg.pose.position.x >= self._xmax:
         if d <= 1.:
             print("success")
-            # return self._reset()
-        self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):
         if not self._active:
             return
-        # store state in case of reset
-        s = self._state
-        if s is None:
-            return
-        t = self._target
-        if t is None:
-            return
         cv_image = self._cv_bridge.imgmsg_to_cv2(
             msg, desired_encoding='passthrough')
-        with self._lock:
-            command = self._dodger.compute_command_vision_based(s, cv_image)
+        command = self._dodger.compute_command_vision_based(
+            self._state, cv_image)
         msg = TwistStamped()
         msg.header.stamp = rospy.Time(command.t)
         msg.twist.linear.x = command.velocity[0]
@@ -181,17 +135,22 @@ class BenchTrainer:
         self._cmd_pub.publish(msg)
 
     def obstacle_callback(self, msg):
-        if not self._active:
-            return
-        self._crashed = msg.data
+        if not self._crashed and msg.data:
+            self._crashed = True
 
     def task_callback(self, msg):
         if (
-            msg.Mission_state is not TaskState.PREPARING and
-            msg.Mission_state is not TaskState.UNITYSETTING and
-            msg.Mission_state is not TaskState.GAZEBOSETTING
+            msg.Mission_state == TaskState.PREPARING or
+            msg.Mission_state == TaskState.UNITYSETTING or
+            msg.Mission_state == TaskState.GAZEBOSETTING
         ):
+            self._active = False
+        elif not self._active:
+            self._current_genome = next(self._generator)
+            self._current_genome.fitness = 0
+            self._dodger.load(self._current_genome)
             self._active = True
+            self._crashed = False
 
     def target_callback(self, msg):
         self._target[0] = msg.poses[0].pose.position.x
@@ -204,9 +163,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--winner", default="")
     parser.add_argument("--checkpoint", default="")
-    parser.add_argument("--neat", default="cfg/neat.cfg")
-    parser.add_argument("--env", default="cfg/env.yaml")
-    parser.add_argument("--log", default="logs/" + "".join(
+    parser.add_argument("--neat", default="neat.cfg")
+    parser.add_argument("--env", default="env.yaml")
+    parser.add_argument("--log", default="".join(
         random.choice(string.ascii_lowercase + string.digits)
         for _ in range(8)
     ))
