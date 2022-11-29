@@ -105,7 +105,6 @@ class BenchTrainer:
         if not self._active:
             return
         if self._crashed:
-            print("crashed")
             return
         pos = np.array([msg.pose.pose.position.x,
                         msg.pose.pose.position.y,
@@ -135,7 +134,8 @@ class BenchTrainer:
         self._cmd_pub.publish(msg)
 
     def obstacle_callback(self, msg):
-        if not self._crashed and msg.data:
+        if self._active and not self._crashed and msg.data:
+            print("crashed")
             self._crashed = True
 
     def task_callback(self, msg):
