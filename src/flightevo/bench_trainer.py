@@ -113,8 +113,6 @@ class BenchTrainer:
         d = np.linalg.norm(pos - self._target)
         self._current_genome.fitness = max(self._current_genome.fitness,
                                            100 - d)
-        if d <= 1.:
-            print("success")
 
     def img_callback(self, msg):
         if not self._active:
@@ -146,6 +144,8 @@ class BenchTrainer:
         ):
             self._active = False
         elif not self._active:
+            if self._current_genome is not None:
+                print(self._current_genome.fitness)
             self._current_genome = next(self._generator)
             self._current_genome.fitness = 0
             self._dodger.load(self._current_genome)
