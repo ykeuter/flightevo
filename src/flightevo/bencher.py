@@ -31,6 +31,7 @@ class Bencher(Dodger):
 
         v = self._adjust_z(v, state)
         yawrate = self._adjust_yaw(state)
+        # yawrate = 0.
 
         c = utils.AgileCommand(2)
         c.t = state.t
@@ -101,7 +102,7 @@ class Bencher(Dodger):
         k0 = int(r / self._resolution_height)
         k1 = int(c / self._resolution_width)
         # copy needed due to non-writeable nparray
-        new_img = 1 - torch.tensor(img).clamp_(100.) \
+        new_img = 1 - torch.tensor(img).clamp_(0., 100.) \
             .unfold(0, k0, k0).unfold(1, k1, k1).amin((-1, -2),) / 100.
 
         # non-linear scaling
