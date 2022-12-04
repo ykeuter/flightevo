@@ -18,7 +18,7 @@ do
   then
     out="$log/selection-stats.csv"
     checkpoint="$(ls $log/checkpoint-* | sort -Vr | head -1)"
-    python -m flightevo.evaluator --out $out --env $env --checkpoint $checkpoint
+    python -m flightevo.dodge_evaluator --out $out --env $env --checkpoint $checkpoint
     # selection
     ./scripts/selector.py --stats $out
   fi
@@ -29,6 +29,6 @@ do
     out="$DIR/evaluation-stats.csv"
     # agent="$(ls $log/run-$i-checkpoint-*.pickle)"
     checkpoint="$(ls $log/checkpoint-* | sort -Vr | head -1)"
-    python -m flightevo.evaluator --out $out --env $env --checkpoint $checkpoint
+    python -m flightevo.dodge_evaluator --out $out --env $env --checkpoint $checkpoint
   fi
 done
