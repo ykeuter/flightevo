@@ -7,12 +7,12 @@ import neat
 import pickle
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--stats", default="logs/bigrun/run-0/selection-stats.csv")
+parser.add_argument("--stats", default="eval-stats.csv")
 args = parser.parse_args()
 fn = Path(args.stats)
-df = pd.read_csv(fn, names=["environment", "agent", "time"])
+df = pd.read_csv(fn, names=["level", "agent", "fitness"])
 print(df)
-agg = df.groupby("agent")["time"].mean()
+agg = df.groupby("agent")["fitness"].mean()
 print(agg)
 winner = agg.idxmax()
 cp, i = winner.rsplit("-", 1)

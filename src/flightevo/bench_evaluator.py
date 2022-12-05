@@ -25,7 +25,6 @@ class BenchEvaluator:
         self._generator = cycle(self._genomes.items())
         self._current_name = None
         self._current_genome = None
-        self._env_cfg = env_cfg
         with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Bencher(
@@ -118,8 +117,8 @@ class BenchEvaluator:
             if self._current_genome is not None:
                 print(self._current_genome.fitness)
                 with open(self._filename, "a") as f:
-                    f.write("{},{}\n".format(self._current_name,
-                                             self._current_genome.fitness))
+                    f.write(",{},{}\n".format(self._current_name,
+                                              self._current_genome.fitness))
             self._current_name, self._current_genome = next(self._generator)
             self._current_genome.fitness = 0
             self._dodger.load(self._current_genome)
