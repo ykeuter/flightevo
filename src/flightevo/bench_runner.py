@@ -14,7 +14,7 @@ from flightevo.utils import AgileQuadState
 from avoid_msgs.msg import TaskState
 
 
-class BenchNode:
+class BenchRunner:
     def __init__(self, env_cfg, genome_pickle):
         with open(Path(genome_pickle), "rb") as f:
             genome = pickle.load(f)
@@ -103,5 +103,5 @@ if __name__ == "__main__":
     parser.add_argument("--agent", default="agent.pickle")
     args = parser.parse_args()
     rospy.init_node('bencher', anonymous=True)
-    n = BenchNode(args.env, args.weights)
+    n = BenchRunner(args.env, args.weights)
     n.run()
