@@ -36,7 +36,7 @@ class BenchRunner:
         self._dodger.load(genome)
         self._target = np.zeros(3, dtype=np.float32)
         self._dodger.set_target(self._target)
-        self.cv_bridge = CvBridge()
+        self._cv_bridge = CvBridge()
         self._state = None
         self._active = False
 
@@ -103,5 +103,5 @@ if __name__ == "__main__":
     parser.add_argument("--agent", default="agent.pickle")
     args = parser.parse_args()
     rospy.init_node('bencher', anonymous=True)
-    n = BenchRunner(args.env, args.weights)
+    n = BenchRunner(args.env, args.agent)
     n.run()
