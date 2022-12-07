@@ -24,14 +24,14 @@ class Bencher(Dodger):
         i = self._transform_img(img, state)
         a = self._mlp.activate(i)
         v = self._transform_activations(a, state)
+        # v = self._adjust_z(v, state)
+        yawrate = self._adjust_yaw(state)
 
         d, a = self._deviation(state)
-        if a > .5 or d < 4.:
+        if a > .5 or d < 3.:
             v /= 4.
-
-        v = self._adjust_z(v, state)
-        yawrate = self._adjust_yaw(state)
-        # yawrate = 0.
+        else:
+            yawrate /= 4.
 
         c = utils.AgileCommand(2)
         c.t = state.t
