@@ -28,14 +28,14 @@ from flightevo.dodger import Dodger
 from flightevo.genome import Genome
 
 
-class Selector:
-    def __init__(self, log_dir, env_cfg, checkpoint, size):
-        self._size = size
-        self._log_dir = Path(log_dir)
-        pop = neat.Checkpointer.restore_checkpoint(checkpoint)
-        self._genomes = list(pop.population.values())
-        self._generator = iter(self._genomes)
+class DodgeEvaluator:
+    def __init__(self, genomes, fn, env_cfg):
+        self._filename = fn
+        self._genomes = genomes
+        self._generator = iter(self._genomes.items())
+        self._current_name = None
         self._current_genome = None
+        self._env_cfg = env_cfg
         with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Dodger(
@@ -49,7 +49,7 @@ class Selector:
             margin=config["dodger"]["margin"],
             bounds=config['environment']['world_box'][2:],
         )
-        self._xmax = int(config['environment']['target'])
+        self._xmax = config['environment']['target']
         self._timeout = config['environment']['timeout']
         self._bounding_box = np.reshape(np.array(
             config['environment']['world_box'], dtype=float), (3, 2))
@@ -61,7 +61,14 @@ class Selector:
         self._active = False
         self._rluuid = None
         self._roslaunch = None
-        self._current_level = config["environment"]["env_folder"]
+        if "env_folder" in config["environment"]:
+            self._levels = repeat(config["environment"]["env_folder"])
+        else:
+            r = config["environment"]["env_range"]
+            self._levels = (
+                "environment_{}".format(i) for i in range(r[0], r[1])
+            )
+        self._current_level = None
 
     def run(self):
         rospy.Subscriber(
@@ -90,16 +97,21 @@ class Selector:
         self._reset()
         rospy.spin()
 
-    def _save(self):
-        s = sorted(self._genomes, reverse=True, key=lambda x: x.fitness)
-        for i, g in enumerate(s[:self._size]):
-            fn = self._log_dir / "member-{}.pickle".format(i)
-            with open(fn, "wb") as f:
-                pickle.dump(g, f)
+    def _level_up(self):
+        self._roslaunch.shutdown()
+        self._launch()
 
     def _launch(self):
         fn = "/home/ykeuter/flightevo/cfg/simulator.launch"
-        args = ["env:={}".format(self._current_level)]
+        try:
+            self._current_level = next(self._levels)
+        except StopIteration:
+            rospy.signal_shutdown("No more environments!")
+            raise
+        args = [
+            "env:={}".format(self._current_level),
+            "cfg:={}".format(Path(self._env_cfg).resolve()),
+        ]
         self._roslaunch = roslaunch.parent.ROSLaunchParent(
             self._rluuid, [(fn, args)])
         self._roslaunch.start()
@@ -110,12 +122,17 @@ class Selector:
         Thread(target=self._reset_and_wait).start()
 
     def _reset_and_wait(self):
+        if self._current_genome:
+            with open(self._filename, "a") as f:
+                f.write("{},{},{}\n".format(self._current_level,
+                                            self._current_name,
+                                            self._current_genome.fitness))
         try:
-            self._current_genome = next(self._generator)
+            self._current_name, self._current_genome = next(self._generator)
         except StopIteration:
-            self._save()
-            rospy.signal_shutdown("All evaluated!")
-            raise
+            self._generator = iter(self._genomes.items())
+            self._current_name, self._current_genome = next(self._generator)
+            self._level_up()
         self._current_genome.fitness = 0
         with self._lock:
             self._dodger.load(self._current_genome)
@@ -140,12 +157,14 @@ class Selector:
         if not self._active:
             return
         if self._crashed:
-            # print("crashed")
+            print("crashed")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         if self._start_time is None:
             self._start_time = msg.t
         if msg.t - self._start_time > self._timeout:
-            # print("timeout")
+            print("timeout")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         pos = np.array([msg.pose.position.x,
                         msg.pose.position.y,
@@ -157,9 +176,15 @@ class Selector:
             (pos <= self._bounding_box[:, 0]) |
             (pos >= self._bounding_box[:, 1])
         ).any():
-            # print("oob")
+            print("oob")
+            # self._current_genome.fitness = self._timeout
             return self._reset()
         self._current_genome.fitness = msg.pose.position.x
+        if msg.pose.position.x >= self._xmax:
+            print("success")
+            # t = msg.t - self._start_time
+            # self._current_genome.fitness = t
+            return self._reset()
         self._state = AgileQuadState(msg)
 
     def img_callback(self, msg):
@@ -195,12 +220,27 @@ class Selector:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", default="logs/debug")
-    parser.add_argument("--env", default="logs/debug/env.yaml")
+    parser.add_argument("--out", default="logs/winner/evaluation-stats.csv")
+    parser.add_argument("--env", default="logs/winner/env-evaluation.yaml")
     parser.add_argument(
-        "--checkpoint", default="logs/debug/checkpoint-4")
-    parser.add_argument("--size", default=20)
+        # "--checkpoint", default="logs/paper/checkpoint-257-medium")
+        "--checkpoint", default="")
+    parser.add_argument(
+        # "--agent", default="logs/winner/member-4-winner.pickle")
+        "--agent", default="")
     args = parser.parse_args()
-    rospy.init_node('selector', anonymous=False)
-    e = Selector(args.dir, args.env, args.checkpoint, args.size)
+    if args.checkpoint:
+        pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
+        cp = Path(args.checkpoint).stem
+        parent = Path(args.checkpoint).parent.name
+        genomes = {
+            "{}-{}-{}".format(parent, cp, i): v
+            for i, v in enumerate(pop.population.values())
+        }
+    if args.agent:
+        p = Path(args.agent)
+        with open(p, "rb") as f:
+            genomes = {p.stem: pickle.load(f)}
+    rospy.init_node('evaluator', anonymous=False)
+    e = DodgeEvaluator(genomes, Path(args.out), args.env)
     e.run()

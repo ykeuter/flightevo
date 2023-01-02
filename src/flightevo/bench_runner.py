@@ -1,30 +1,23 @@
-import rospy
-import neat
-import numpy as np
-import argparse
 import pickle
+import argparse
+import numpy as np
+import rospy
 
 from pathlib import Path
-from sensor_msgs.msg import Image
-from std_msgs.msg import Bool
-from cv_bridge import CvBridge
-from nav_msgs.msg import Odometry, Path as PathMsg
-from ruamel.yaml import YAML
-from geometry_msgs.msg import TwistStamped
-from avoid_msgs.msg import TaskState
-from itertools import cycle
-
-from flightevo.utils import AgileQuadState
 from flightevo.bencher import Bencher
+from nav_msgs.msg import Path as PathMsg, Odometry
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+from geometry_msgs.msg import TwistStamped
+from ruamel.yaml import YAML
+from flightevo.utils import AgileQuadState
+from avoid_msgs.msg import TaskState
 
 
-class BenchEvaluator:
-    def __init__(self, genomes, fn, env_cfg):
-        self._filename = fn
-        self._genomes = genomes
-        self._generator = cycle(self._genomes.items())
-        self._current_name = None
-        self._current_genome = None
+class BenchRunner:
+    def __init__(self, env_cfg, genome_pickle):
+        with open(Path(genome_pickle), "rb") as f:
+            genome = pickle.load(f)
         with open(Path(env_cfg)) as f:
             config = YAML().load(f)
         self._dodger = Bencher(
@@ -40,11 +33,11 @@ class BenchEvaluator:
             creep_z=config["dodger"]["creep_z"],
             creep_yaw=config["dodger"]["creep_yaw"],
         )
+        self._dodger.load(genome)
         self._target = np.zeros(3, dtype=np.float32)
         self._dodger.set_target(self._target)
         self._cv_bridge = CvBridge()
         self._state = None
-        self._crashed = False
         self._active = False
 
     def run(self):
@@ -55,9 +48,6 @@ class BenchEvaluator:
         rospy.Subscriber(
             "/depth", Image, self.img_callback,
             queue_size=1, tcp_nodelay=True)
-        rospy.Subscriber(
-            "/hummingbird/collision", Bool,
-            self.obstacle_callback, queue_size=1, tcp_nodelay=True)
         rospy.Subscriber(
             "/hummingbird/goal_point", PathMsg, self.target_callback,
             queue_size=1, tcp_nodelay=True)
@@ -72,17 +62,6 @@ class BenchEvaluator:
 
     def state_callback(self, msg):
         self._state = AgileQuadState(msg)
-        if not self._active:
-            return
-        if self._crashed:
-            return
-        pos = np.array([msg.pose.pose.position.x,
-                        msg.pose.pose.position.y,
-                        msg.pose.pose.position.z])
-
-        d = np.linalg.norm(pos - self._target)
-        self._current_genome.fitness = max(self._current_genome.fitness,
-                                           100 - d)
 
     def img_callback(self, msg):
         if not self._active:
@@ -101,11 +80,6 @@ class BenchEvaluator:
         msg.twist.angular.z = command.yawrate
         self._cmd_pub.publish(msg)
 
-    def obstacle_callback(self, msg):
-        if self._active and not self._crashed and msg.data:
-            print("crashed")
-            self._crashed = True
-
     def task_callback(self, msg):
         if (
             msg.Mission_state == TaskState.PREPARING or
@@ -113,48 +87,21 @@ class BenchEvaluator:
             msg.Mission_state == TaskState.GAZEBOSETTING
         ):
             self._active = False
-        elif not self._active:
-            if self._current_genome is not None:
-                print(self._current_genome.fitness)
-                with open(self._filename, "a") as f:
-                    f.write(",{},{}\n".format(self._current_name,
-                                              self._current_genome.fitness))
-            self._current_name, self._current_genome = next(self._generator)
-            self._current_genome.fitness = 0
-            self._dodger.load(self._current_genome)
+        else:
             self._active = True
-            self._crashed = False
 
-    def target_callback(self, msg):
-        self._target[0] = msg.poses[0].pose.position.x
-        self._target[1] = msg.poses[0].pose.position.y
-        self._target[2] = msg.poses[0].pose.position.z
+    def target_callback(self, data):
+        self._target[0] = data.poses[0].pose.position.x
+        self._target[1] = data.poses[0].pose.position.y
+        self._target[2] = data.poses[0].pose.position.z
         self._dodger.set_target(self._target)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default="eval-stats.csv")
     parser.add_argument("--env", default="env.yaml")
-    parser.add_argument(
-        # "--checkpoint", default="logs/paper/checkpoint-257-medium")
-        "--checkpoint", default="")
-    parser.add_argument(
-        # "--agent", default="logs/winner/member-4-winner.pickle")
-        "--agent", default="")
+    parser.add_argument("--agent", default="agent.pickle")
     args = parser.parse_args()
-    if args.checkpoint:
-        pop = neat.Checkpointer.restore_checkpoint(args.checkpoint)
-        cp = Path(args.checkpoint).stem
-        parent = Path(args.checkpoint).parent.name
-        genomes = {
-            "{}-{}-{}".format(parent, cp, i): v
-            for i, v in enumerate(pop.population.values())
-        }
-    if args.agent:
-        p = Path(args.agent)
-        with open(p, "rb") as f:
-            genomes = {p.stem: pickle.load(f)}
-    rospy.init_node('evaluator', anonymous=False)
-    e = BenchEvaluator(genomes, Path(args.out), args.env)
-    e.run()
+    rospy.init_node('bencher', anonymous=True)
+    n = BenchRunner(args.env, args.agent)
+    n.run()
