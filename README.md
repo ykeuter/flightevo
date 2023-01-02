@@ -14,5 +14,5 @@ The code in this repository was used for winning the [ICRA 2022 DodgeDrone Chall
 You can have a look at the arguments of these modules to play around with different settings.
 ## Results
 For a report on the methodology and final results, please look in the [results folder](./results/).
-## Acknowledgement
+## Acknowledgements
 Next to the contributors of the original repositories that were used, this repository is created in collaboration with [guidoAI](https://github.com/guidoAI) and [NPU-yuhang](https://github.com/NPU-yuhang), and the [MAVLab](https://github.com/tudelft) organization.
