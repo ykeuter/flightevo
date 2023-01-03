@@ -23,10 +23,26 @@ The first step we took was to reduce the depth image to a 16 x 16 pixel inverse 
 
 *figure 2*
 
-We can now calculate the activation of a receptive field as:
-
-Intuitively, it makes sense that the activation of a receptive field with a focal point to the left of the image center, mostly impacts the decision of whether or not to move left. Similarly, we would at the same time expect corresponding receptive fields for the right, up, down and straight directions (corresponding to moving right, up, down and straight respectively). Hence we define a single encoding to represent a set of five receptive fields corresponding to the five directions, and allow for the agent to have multiple instances of these encodings (i.e. multiple sets of five receptive fields). We can then calculate an activation per direction as:
-
+We can now calculate the activation of a receptive field as follows:
+```math
+\begin{align}
+&R(f) = w \sum_p D(p) e^{-\frac{\Delta(p,f)^2}{2\sigma^2}} \\
+&p \in \{\text{all pixels}\} \\
+&\sigma = \text{scale} \\
+&f = \text{focal point} \\
+&w = \text{weight} \\
+&D(p) = \text{depth value of $p$} \\
+&\Delta(p,f) = \text{distance between $p$ and $f$}
+\end{align}
+```
+Intuitively, it makes sense that the activation of a receptive field with a focal point to the left of the image center, mostly impacts the decision of whether or not to move left. Similarly, we would at the same time expect corresponding receptive fields for the right, up, down and forward directions (corresponding to moving right, up, down and forward respectively). Hence we define a single encoding to represent a set of five receptive fields corresponding to the five directions. A single offset then defines the distance to the center for each of the four "directional" focal points (while the "forward" focal point always stays at the center). We allow for the agent to have multiple instances of this encoding (i.e. multiple sets of five receptive fields). We can then calculate an activation per direction as follows:
+```math
+\begin{align}
+&A(d) = \sum_i R(f_{i,d}) \\
+&d \in \{\text{up,right,down,left,forward}\} \\
+&f_{i,d} = \text{focal point of $i$th encoding in direction $d$}
+\end{align}
+```
 Finally, at each time step, we pick the direction with the highest activation and translate it to the corresponding control command using table 1.
 
 | action | v_x | v_y | v_z | yaw |
