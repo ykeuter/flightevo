@@ -1,7 +1,7 @@
 # Using Evolved Receptive Fields to Win the DodgeDrone Challenge
 ## Introduction
 
-During ICRA2022, the Robotics and Perception Group at University of Zurich organized the DodgeDrone Challenge [^1] to benchmark progress in the research area of agile flight and obstacle avoidance. Teams had to develop the vision based AI for agile, autonomous drone flight in simulated, obstacle-ridden environments. In this paper we will describe our winning approach and analyze our findings. We show that by evolving receptive fields we can achieve remarkable results after just a few generations. We took inspiration from the hyperNEAT algorithm [^2] by Stanley et al. Although our winning solution only needed one gene in total, our interest is in the benefit of complexification by the NEAT algorithm [^3]. We present a preliminary analysis of our approach and also confirm the benefit of complexification. We conclude with directions for future research based on our findings.
+During ICRA2022, the Robotics and Perception Group at University of Zurich organized the DodgeDrone Challenge [^1] to benchmark progress in the research area of agile flight and obstacle avoidance. Teams had to develop the vision based AI for agile, autonomous drone flight in simulated, obstacle-ridden environments. In this paper we will describe our winning approach and analyze our findings. We show that by evolving receptive fields we can achieve remarkable results after just a few generations. We took inspiration from the hyperNEAT [^2] algorithm by Stanley et al. Although our winning solution only needed one gene in total, our interest is in the benefit of complexification by the NEAT [^3] algorithm. We present a preliminary analysis of our approach and also confirm the benefit of complexification. We conclude with directions for future research based on our findings.
 
 ## Background
 In nature we find that evolution has led to many highly efficient vision systems by co-evolving sensors, body and brain. Even small animals with few light-sensitive cells can successfully perform agile flight (e.g. flies, which only have ~800 facets with 8 photosensitive cells = 6400 “pixels”).
@@ -14,7 +14,7 @@ In the case of the competition, we were provided with a depth image of 480 by 32
 
 There were three different control modes for the quadrotor (in order of increasing level of abstraction): commanding individual single-rotor thrusts (SRT), specifying mass-normalized collective thrust and body rates (CTBR), and outputting linear velocity commands and yaw rate (LINVEL). Although [^5] shows that best performance is achieved with mass-normalized collective thrust and body rates, in our approach we use the highest level of abstraction (i.e. LINVEL) for simplicity.
 
-For mapping the input image to output control actions, we were inspired by hyperNEAT [^2], which shows that there is value in using the coordinates of input and output nodes when evolving the weights of a neural network. This is done by evolving a separate (“hyper”) network to set the weights of the underlying neural network. Furthermore, by augmenting this hyper network through the NEAT algorithm [^3], we gradually complexify the way the weights are set.
+For mapping the input image to output control actions, we were inspired by hyperNEAT [^2], which shows that there is value in using the coordinates of input and output nodes when evolving the weights of a neural network. This is done by evolving a separate (“hyper”) network to set the weights of the underlying neural network. Furthermore, by augmenting this hyper network through the NEAT [^3] algorithm, we gradually complexify the way the weights are set.
 
 ## Method
 The first step we took was to reduce the depth image to a 16 x 16 pixel inverse depth image. Hence a value of 1 means close by (“danger”), while 0 means far off (“clear”). Next we introduced the concept of visual receptive fields. A receptive field “focuses” on a specific area of the depth image by giving more weight to pixels around the focal point. This can be defined as a Gaussian function. To apply this function, we first map each of the 256 pixels to coordinates in the domain [-1, 1], [-1, 1] (figure 2).
@@ -97,9 +97,9 @@ Our method seemed to reach the upper bound of its fitness very quickly, which co
 ## Acknowledgements
 This work was part of a collaboration with [guidoAI](https://github.com/guidoAI) and [NPU-yuhang](https://github.com/NPU-yuhang), and the [MAVLab](https://github.com/tudelft) organization. Many thanks to them for the fruitful discussions!
 
-[^1]: DodgeDrone
-[^2]: hyperNEAT
-[^3]: NEAT
-[^4]: Flightmare
-[^5]: CTBR
+[^1]: [ICRA 2022 DodgeDrone Challenge: Vision-based Agile Drone Flight](https://uzh-rpg.github.io/icra2022-dodgedrone/)
+[^2]: Stanley, Kenneth O., David B. D'Ambrosio, and Jason Gauci. "A hypercube-based encoding for evolving large-scale neural networks." *Artificial life* 15.2 (2009): 185-212.
+[^3]: Stanley, Kenneth O., and Risto Miikkulainen. "Efficient reinforcement learning through evolving neural network topologies." *Proceedings of the 4th Annual Conference on genetic and evolutionary computation.* 2002.
+[^4]: Song, Yunlong, et al. "Flightmare: A flexible quadrotor simulator." *Conference on Robot Learning.* PMLR, 2021.
+[^5]: Kaufmann, Elia, Leonard Bauersfeld, and Davide Scaramuzza. "A benchmark comparison of learned control policies for agile quadrotor flight." *arXiv preprint arXiv:2202.10796* (2022).
 
