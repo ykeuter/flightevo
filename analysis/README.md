@@ -17,7 +17,7 @@ There were three different control modes for the quadrotor (in order of increasi
 For mapping the input image to output control actions, we were inspired by hyperNEAT [^2], which shows that there is value in using the coordinates of input and output nodes when evolving the weights of a neural network. This is done by evolving a separate (“hyper”) network to set the weights of the underlying neural network. Furthermore, by augmenting this hyper network through the NEAT [^3] algorithm, we gradually complexify the way the weights are set.
 
 ## Method
-The first step we took was to reduce the depth image to a 16 x 16 pixel inverse depth image. Hence a value of 1 means close by (“danger”), while 0 means far off (“clear”). Next we introduced the concept of visual receptive fields. A receptive field “focuses” on a specific area of the depth image by giving more weight to pixels around the focal point. This can be defined as a Gaussian function. To apply this function, we first map each of the 256 pixels to coordinates in the domain [-1, 1], [-1, 1] (figure 2).
+The first step we took was to reduce the depth image to a 16 x 16 pixel inverse depth image. Hence a value of 1 means close by (“danger”), while 0 means far off (“clear”). Next we introduced the concept of visual receptive fields. A receptive field “focuses” on a specific area of the depth image by giving more weight to pixels around the focal point. This can be defined as a Gaussian function. To apply this function, we first map each of the 256 pixels to coordinates in the domain ([-1, 1], [-1, 1]) (figure 2).
 
 ![figure 2](./pics/2.png)
 
