@@ -111,7 +111,7 @@ from scratch. acc=.2. full-resolution
 # g8852vh5
 continuation.
 
-# konqo6lr
+# konqo6lr -> icra22-winner
 16x16 with speed 3. icra winner is coming from this run.
 member-4
 
@@ -185,17 +185,17 @@ fix 1 node. seed shuffling. fix weight and scale. positive zoom only.
 # bigrun-15
 fix 2 node. seed shuffling. fix weight and scale. positive zoom only.
 
-# bigrun-16
+# bigrun-16 -> one-gene
 fix nodes to 1 only. evolve scale (and weight). zoom positive and negative.
 copy of bigrun-11 but with seeded shuffling now.
 
-# bigrun-17
+# bigrun-17 -> two-genes
 fix nodes to 2 only. evolve scale (and weight). zoom positive and negative.
 
 # bigrun-18
 flex nodes. evolve scale (and weight). zoom positive and negative. not duplicating but adding new nodes.
 
-# bigrun-19
+# bigrun-19 -> multi-genes
 flex nodes. evolve scale (and weight). zoom positive and negative. not duplicating but adding new nodes.
 bigrun-18 but with tendency to more nodes (due to fix of rounding down at crossover).
 
@@ -205,8 +205,8 @@ fix 2 nodes with only positive zoom.
 # bigrun-21
 flex with only positive zoom.
 
-# bigrun-22
+# bigrun-22 -> one-gene-pos-offset
 fix 1 node with only positive zoom.
 
-# bigrun-23
+# bigrun-23 -> one-gene-neg-offset
 fix 1 node with only negative zoom.
