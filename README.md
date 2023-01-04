@@ -11,7 +11,7 @@ The code in this repository was used for winning the [ICRA 2022 DodgeDrone Chall
 - First launch ROS by running `roslaunch cfg/tools.launch` in a terminal.
 - Next:
   - either, for training, run `python -m flightevo.dodge_trainer` in a separate terminal,
-  - or, for evalutation, run `python -m flightevo.dodge_trainer` in a separate terminal.
+  - or, for evalutation, run `python -m flightevo.dodge_evaluator` in a separate terminal.
 
 You can have a look at the arguments of these modules to play around with different settings.
 
